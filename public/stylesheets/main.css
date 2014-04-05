@@ -1,0 +1,12 @@
+body {
+	padding-top: 50px;
+	padding-bottom: 20px;
+}
+
+.navbar-fixed-top {
+	min-height: 0;
+}
+
+.navbar-fixed-top .btn-group {
+	margin: 8px;
+}
