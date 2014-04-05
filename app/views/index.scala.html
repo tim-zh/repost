@@ -28,7 +28,7 @@
 				</div>
 			</form>
 			@if(user.isDefined) {
-				<div class="btn-group btn-group-sm">
+				<div class="btn-group btn-group-sm navbar-form">
 					<div class="btn-group btn-group-sm">
 						<button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown">
 							@user.get.getTitle
@@ -36,18 +36,21 @@
 						</button>
 						<ul class="dropdown-menu">
 							<li><a href="#">settings</a></li>
-							<li><a href="#">log out</a></li>
+							<li><form method="post" action="/">
+								<input type="hidden" name="logout" value="1">
+								<a><button type="submit" class="btn btn-link btn-sm">sign out</button></a>
+							</form></li>
 						</ul>
 					</div>
 					<button type="button" class="btn btn-default">all filters</button>
 				</div>
 			} else {
-				<form class="navbar-form navbar-left" role="form">
+				<form class="navbar-form navbar-left" role="form" method="post" action="/">
 					<div class="form-group input-group-sm">
-						<input type="text" placeholder="login" class="form-control">
+						<input type="text" placeholder="login" class="form-control" name="name">
 					</div>
 					<div class="form-group input-group-sm">
-						<input type="password" placeholder="password" class="form-control">
+						<input type="password" placeholder="password" class="form-control" name="pass">
 					</div>
 					<button type="submit" class="btn btn-default btn-sm">sign in</button>
 					<a class="btn-link btn-sm" href="#">register</a>

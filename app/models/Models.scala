@@ -25,6 +25,8 @@ sealed abstract class Entity {
   def getTitle: String = ""
 
   def getDescription: String = ""
+
+  override def toString: String = getTitle
 }
 
 case class User(name: String, password: String, var entries: List[Entry], var comments: List[Comment]) extends Entity {
