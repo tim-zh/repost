@@ -5,5 +5,5 @@ trait Dao {
 
   def getUser(id: Long): Option[User]
 
-  def getEntries(user: Option[User], filter: Filter, page: Int, itemsOnPage: Int): (Int, List[Entry])
+  def getEntries(user: Option[User], filter: Filter, page: Int, itemsOnPage: Int): (Int, Seq[Entry])
 }

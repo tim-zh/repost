@@ -1,4 +1,4 @@
-@(user: Option[User], pagesNumber: Int, entries: List[Entry])
+@(user: Option[User], pagesNumber: Int, entries: Seq[Entry])
 @wrapper(user) {
 	@for(entry <- entries) {
 		<h5>@entry.author.getTitle:</h5>
