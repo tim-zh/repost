@@ -10,4 +10,6 @@ trait Dao {
   def getTag(id: Long): Option[Tag]
 
   def getEntriesByTag(user: Option[User], tag: Tag, page: Int, itemsOnPage: Int): (Int, Seq[Entry])
+
+  def getEntry(id: Long): Option[Entry]
 }

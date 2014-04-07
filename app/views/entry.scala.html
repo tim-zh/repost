@@ -1,0 +1,12 @@
+@(user: Option[User], entry: Entry)
+@wrapper(user, entry.getTitle) {
+	<h5>@entry.author.getTitle:</h5>
+	<h2>@entry.getTitle</h2>
+	<small>@tags(entry)</small>
+	<hr/>
+	<p>@Html(entry.content)</p>
+	<hr/>
+	@for(comment <- entry.comments) {
+     @views.html.comment(comment)
+ }
+}

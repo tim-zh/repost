@@ -1,0 +1,7 @@
+@(comment: Comment)
+<div class="panel panel-default">
+  <div class="panel-heading">@comment.author.getTitle (@comment.date)</div>
+  <div class="panel-body">
+  @Html(comment.content)
+  </div>
+</div>

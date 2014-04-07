@@ -9,8 +9,10 @@ object TestDao extends Dao {
   tag2.id = 2
   val user1 = User("user1", "pass", null, null)
   user1.id = 1
-  val entry1 = Entry(user1, "entry1", "content1<b/r>bla1", Seq(tag1, tag2), null)
+  val entry1 = Entry(user1, "entry1", "content1<br/>bla1", Seq(tag1, tag2), null)
+  entry1.id = 1
   val entry2 = Entry(user1, "entry2", "content2<br/>bla2", Seq(tag1), null)
+  entry2.id = 2
   val comment1 = Comment(user1, new Date, "comment1<br/>c1", entry1)
   val comment2 = Comment(user1, new Date, "comment2<br/>c2", entry1)
   val comment3 = Comment(user1, new Date, "comment3<br/>c3", entry1)
@@ -38,4 +40,6 @@ object TestDao extends Dao {
     list = list drop (page * itemsOnPage) take itemsOnPage filter { _.tags.contains(tag) }
     (1, list)
   }
+
+  def getEntry(id: Long): Option[Entry] = Seq(entry1, entry2) find { _.id == id }
 }

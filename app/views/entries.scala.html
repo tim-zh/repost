@@ -1,13 +1,9 @@
-@(user: Option[User], pagesNumber: Int, entries: Seq[Entry], title: String = "")
+@(user: Option[User], currentPage: Int, pagesNumber: Int, entries: Seq[Entry], title: String = "")
 @wrapper(user, title) {
 	@for(entry <- entries) {
 		<h5>@entry.author.getTitle:</h5>
-		<h1>@entry.getTitle</h1>
-		<small>
-		@for(tag <- entry.tags) {
-			<a href="/tag/@tag.id" class="label label-info">@tag.getTitle</a>
-		}
-		</small>
+		<h2><a href="/entry/@entry.id">@entry.getTitle</a></h2>
+		<small>@tags(entry)</small>
 		<div>@entry.getDescription</div>
 		<hr/>
 	}
