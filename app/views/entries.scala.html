@@ -1,5 +1,5 @@
-@(user: Option[User], pagesNumber: Int, entries: Seq[Entry])
-@wrapper(user) {
+@(user: Option[User], pagesNumber: Int, entries: Seq[Entry], title: String = "")
+@wrapper(user, title) {
 	@for(entry <- entries) {
 		<h5>@entry.author.getTitle:</h5>
 		<h1>@entry.getTitle</h1>
