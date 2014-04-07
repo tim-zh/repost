@@ -1,0 +1,12 @@
+@(user: Option[User], pagesNumber: Int, entries: List[Entry])
+@for(entry <- entries) {
+	<h5>@entry.author.getTitle:</h5>
+	<h1>@entry.getTitle</h1>
+	<small>
+	@for(tag <- entry.tags) {
+		<a href="/tag/@tag.id" class="label label-info">@tag.getTitle</a>
+	}
+	</small>
+	<div>@entry.getDescription</div>
+	<hr/>
+}

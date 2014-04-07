@@ -13,22 +13,24 @@ object Application extends Controller {
     implicit req =>
       val dao = TestDao
       if (req.method == "POST" && (req.body.asFormUrlEncoded map { _.get("logout") } getOrElse None map { _(0) } getOrElse null) == "1")
-        Ok(views.html.index(None)).withNewSession
+        Ok(views.html.index(None, 0, Nil)).withNewSession
       else {
         val loginForm = Form(mapping("name" -> nonEmptyText, "pass" -> nonEmptyText)(LoginData.apply)(LoginData.unapply))
         loginForm.bindFromRequest.fold(
           badForm => {
             val userId = Integer.parseInt(req.session.get("user").getOrElse("-1"))
             val user = dao.getUser(userId)
-            Ok(views.html.index(user))
+            val (pagesNumber, entries) = dao.getEntries(user, null, 0, 3)
+            Ok(views.html.index(user, pagesNumber, entries))
           },
           loginData => {
             val user = dao.getUser(loginData.name, loginData.password)
             user match {
               case Some(x) =>
-                Ok(views.html.index(user)).withSession(req.session +("user", x.id + ""))
+                val (pagesNumber, entries) = dao.getEntries(user, null, 0, 3)
+                Ok(views.html.index(user, pagesNumber, entries)).withSession(req.session +("user", x.id + ""))
               case None =>
-                Ok(views.html.index(None))
+                Ok(views.html.index(None, 0, Nil))
             }
           }
         )

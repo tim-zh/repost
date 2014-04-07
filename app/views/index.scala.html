@@ -1,4 +1,4 @@
-@(user: Option[User])
+@(user: Option[User], pagesNumber: Int, entries: List[Entry])
 <!DOCTYPE html>
 <html class="no-js">
 	<head>
@@ -61,6 +61,7 @@
 		<div class="container-fluid">
 			<div class="row">
 				<div class="col-xs-12">
+					@views.html.entries(user, pagesNumber, entries)
 				</div>
 			</div>
 		</div>
