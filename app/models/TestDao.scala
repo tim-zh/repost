@@ -4,7 +4,9 @@ import java.util.Date
 
 object TestDao extends Dao {
   val tag1 = Tag("tag1")
+  tag1.id = 1
   val tag2 = Tag("tag2")
+  tag2.id = 2
   val user1 = User("user1", "pass", null, null)
   user1.id = 1
   val entry1 = Entry(user1, "entry1", "content1<b/r>bla1", List(tag1, tag2), null)
