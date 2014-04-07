@@ -7,10 +7,11 @@ import play.api.data.Forms._
 
 object Application extends Controller {
 
+  implicit val dao = TestDao
+
   case class LoginData(name: String, password: String)
 
   def index = Action { implicit req =>
-      implicit val dao = TestDao
       if (req.method == "POST" && (req.body.asFormUrlEncoded map { _.get("logout") } getOrElse None map { _(0) } getOrElse null) == "1")
         Ok(views.html.entries(None, 0, 0, Nil)).withNewSession
       else {
@@ -35,8 +36,19 @@ object Application extends Controller {
       }
   }
 
+  def search() = Action { implicit req =>
+    val searchForm = Form(single("query", text))
+    searchForm.bindFromRequest().get match {
+      case query: String =>
+        val user = getUserFromSession
+        val (pagesNumber, entries) = dao.getEntriesBySearch(user, query, 0, 3)
+        Ok(views.html.entries(user, 1, pagesNumber, entries))
+      case _ =>
+        Redirect(routes.Application.index)
+    }
+  }
+
   def tag(id: Long) = Action { implicit req =>
-    implicit val dao = TestDao
     val user = getUserFromSession
     val tag = dao.getTag(id)
     renderOption(tag) { x =>
@@ -46,7 +58,6 @@ object Application extends Controller {
   }
 
   def entry(id: Long) = Action { implicit req =>
-    implicit val dao = TestDao
     val user = getUserFromSession
     val entry = dao.getEntry(id)
     renderOption(entry) { x => Ok(views.html.entry(user, x)) }

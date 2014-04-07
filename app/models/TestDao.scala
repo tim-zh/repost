@@ -41,5 +41,11 @@ object TestDao extends Dao {
     (1, list)
   }
 
+  def getEntriesBySearch(user: Option[User], query: String, page: Int, itemsOnPage: Int): (Int, Seq[Entry]) = {
+    var list = Seq(entry1, entry2)
+    list = list drop (page * itemsOnPage) take itemsOnPage filter { _.getTitle contains query }
+    (1, list)
+  }
+
   def getEntry(id: Long): Option[Entry] = Seq(entry1, entry2) find { _.id == id }
 }

@@ -1,6 +1,8 @@
 GET         /                    controllers.Application.index
 POST        /                    controllers.Application.index
 
+POST        /search              controllers.Application.search
+
 GET         /tag/:id             controllers.Application.tag(id: Long)
 GET         /entry/:id           controllers.Application.entry(id: Long)
 

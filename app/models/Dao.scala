@@ -11,5 +11,7 @@ trait Dao {
 
   def getEntriesByTag(user: Option[User], tag: Tag, page: Int, itemsOnPage: Int): (Int, Seq[Entry])
 
+  def getEntriesBySearch(user: Option[User], query: String, page: Int, itemsOnPage: Int): (Int, Seq[Entry])
+
   def getEntry(id: Long): Option[Entry]
 }
