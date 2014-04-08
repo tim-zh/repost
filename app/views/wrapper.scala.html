@@ -10,6 +10,7 @@
 		<link rel="stylesheet" href="@routes.Assets.at("stylesheets/bootstrap.min.css")">
 		<link rel="stylesheet" href="@routes.Assets.at("stylesheets/main.css")">
 		<link rel="stylesheet" href="@routes.Assets.at("stylesheets/bootstrap-theme.min.css")">
+		<link rel="stylesheet" href="@routes.Assets.at("stylesheets/perfect-scrollbar.css")">
 	</head>
 	<body>
 		<!--[if IE]>
@@ -68,5 +69,9 @@
 
 		<script src="@routes.Assets.at("javascripts/jquery-1.11.0.min.js")"></script>
 		<script src="@routes.Assets.at("javascripts/bootstrap.min.js")"></script>
+		<script src="@routes.Assets.at("javascripts/perfect-scrollbar-0.4.9.with-mousewheel.min.js")"></script>
+		<script>
+			$('#pageScroll').perfectScrollbar()
+		</script>
 	</body>
 </html>

@@ -10,3 +10,17 @@ body {
 .navbar-fixed-top > .btn-group {
 	margin: 8px 0;
 }
+
+.previous-next-pagination {
+	float: left;
+	padding-right: 10px;
+}
+
+#pageScroll {
+	position: relative;
+	overflow: hidden;
+}
+
+#pageScroll li {
+	display: table-cell;
+}
