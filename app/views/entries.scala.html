@@ -1,11 +1,5 @@
 @(user: Option[User], currentPage: Int, pagesNumber: Int, entries: Seq[Entry], link: String = "", title: String = "")
 @wrapper(user, title) {
-	@for(entry <- entries) {
-		<h5>@entry.author.getTitle:</h5>
-		<h2><a href="/entry/@entry.id">@entry.getTitle</a></h2>
-		<small>@tags(entry)</small>
-		<div>@entry.getDescription</div>
-		<hr/>
-	}
+	@entryList(entries)
 	@navigation(currentPage, pagesNumber, link)
 }

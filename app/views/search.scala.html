@@ -1,0 +1,5 @@
+@(user: Option[User], currentPage: Int, pagesNumber: Int, entries: Seq[Entry])
+@wrapper(user) {
+	@entryList(entries)
+	@navigation(currentPage, pagesNumber, "/search")
+}

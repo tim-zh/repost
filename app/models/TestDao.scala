@@ -21,6 +21,7 @@ object TestDao extends Dao {
   val comment4 = Comment(user1, new Date, "comment4<br/>c4", entry2)
   entry1.comments = Seq(comment1, comment2, comment3)
   entry2.comments = Seq(comment4)
+  entry3.comments = Seq(comment1, comment2, comment3, comment4)
   user1.entries = Seq(entry1, entry2, entry3)
   user1.comments = Seq(comment1, comment2, comment3, comment4)
 

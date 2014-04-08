@@ -43,7 +43,7 @@ object Application extends Controller {
       case query: String =>
         val user = getUserFromSession
         val (pagesNumber, entries) = dao.getEntriesBySearch(user, query, 0, Int.MaxValue)
-        Ok(views.html.entries(user, page, pagesNumber, entries, "/search"))
+        Ok(views.html.search(user, page, pagesNumber, entries))
       case _ =>
         Redirect(routes.Application.index(0))
     }
@@ -54,7 +54,7 @@ object Application extends Controller {
     val tag = dao.getTag(id)
     renderOption(tag) { x =>
       val (pagesNumber, entries) = dao.getEntriesByTag(user, x, 0, itemsOnPage)
-      Ok(views.html.entries(user, page, pagesNumber, entries, s"/tag/$id", x.getTitle))
+      Ok(views.html.tag(user, page, pagesNumber, entries, x))
     }
   }
 
