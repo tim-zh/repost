@@ -1,0 +1,21 @@
+@(currentPage: Int, pagesNumber: Int, link: String)
+@require(pagesNumber >= 0)
+@if(pagesNumber > 1) {
+	<ul class="pagination">
+		@if(currentPage == 0) {
+			<li class="disabled"><a href="">&laquo;</a></li>
+		} else {
+			<li><a href="@link/@(currentPage - 1)">&laquo;</a></li>
+		}
+		@if(currentPage == pagesNumber - 1) {
+			<li class="disabled"><a href="">&raquo;</a></li>
+		} else {
+			<li><a href="@link/@(currentPage + 1)">&raquo;</a></li>
+		}
+	</ul>
+	<ul class="pagination">
+	@for(i <- 0 until pagesNumber) {
+		<li class="@(if (currentPage == i) "active")"><a href="@link/@i">@i</a></li>
+	}
+	</ul>
+}

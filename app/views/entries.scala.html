@@ -1,4 +1,4 @@
-@(user: Option[User], currentPage: Int, pagesNumber: Int, entries: Seq[Entry], title: String = "")
+@(user: Option[User], currentPage: Int, pagesNumber: Int, entries: Seq[Entry], link: String = "", title: String = "")
 @wrapper(user, title) {
 	@for(entry <- entries) {
 		<h5>@entry.author.getTitle:</h5>
@@ -7,4 +7,5 @@
 		<div>@entry.getDescription</div>
 		<hr/>
 	}
+	@navigation(currentPage, pagesNumber, link)
 }

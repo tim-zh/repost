@@ -13,13 +13,15 @@ object TestDao extends Dao {
   entry1.id = 1
   val entry2 = Entry(user1, "entry2", "content2<br/>bla2", Seq(tag1), null)
   entry2.id = 2
+  val entry3 = Entry(user1, "entry3", "content3<br/>bla3", Seq(tag2), null)
+  entry3.id = 3
   val comment1 = Comment(user1, new Date, "comment1<br/>c1", entry1)
   val comment2 = Comment(user1, new Date, "comment2<br/>c2", entry1)
   val comment3 = Comment(user1, new Date, "comment3<br/>c3", entry1)
   val comment4 = Comment(user1, new Date, "comment4<br/>c4", entry2)
   entry1.comments = Seq(comment1, comment2, comment3)
   entry2.comments = Seq(comment4)
-  user1.entries = Seq(entry1, entry2)
+  user1.entries = Seq(entry1, entry2, entry3)
   user1.comments = Seq(comment1, comment2, comment3, comment4)
 
   def getUser(name: String, password: String): Option[User] =
@@ -28,24 +30,30 @@ object TestDao extends Dao {
   def getUser(id: Long): Option[User] = if (id == user1.id) Some(user1) else None
 
   def getEntries(user: Option[User], filter: Filter, page: Int, itemsOnPage: Int): (Int, Seq[Entry]) = {
-    var list = Seq(entry1, entry2)
+    require(itemsOnPage != 0)
+    var list = Seq(entry1, entry2, entry3)
+    val pagesNumber = list.size / itemsOnPage + (if (list.size % itemsOnPage != 0) 1 else 0)
     list = list drop (page * itemsOnPage) take itemsOnPage
-    (1, list)
+    (pagesNumber, list)
   }
 
   def getTag(id: Long): Option[Tag] = Seq(tag1, tag2) find { _.id == id }
 
   def getEntriesByTag(user: Option[User], tag: Tag, page: Int, itemsOnPage: Int): (Int, Seq[Entry]) = {
-    var list = Seq(entry1, entry2)
-    list = list drop (page * itemsOnPage) take itemsOnPage filter { _.tags.contains(tag) }
-    (1, list)
+    require(itemsOnPage != 0)
+    var list = Seq(entry1, entry2, entry3) filter { _.tags.contains(tag) }
+    val pagesNumber = list.size / itemsOnPage + (if (list.size % itemsOnPage != 0) 1 else 0)
+    list = list drop (page * itemsOnPage) take itemsOnPage
+    (pagesNumber, list)
   }
 
   def getEntriesBySearch(user: Option[User], query: String, page: Int, itemsOnPage: Int): (Int, Seq[Entry]) = {
-    var list = Seq(entry1, entry2)
-    list = list drop (page * itemsOnPage) take itemsOnPage filter { _.getTitle contains query }
-    (1, list)
+    require(itemsOnPage != 0)
+    var list = Seq(entry1, entry2, entry3) filter { _.getTitle contains query }
+    val pagesNumber = list.size / itemsOnPage + (if (list.size % itemsOnPage != 0) 1 else 0)
+    list = list drop (page * itemsOnPage) take itemsOnPage
+    (pagesNumber, list)
   }
 
-  def getEntry(id: Long): Option[Entry] = Seq(entry1, entry2) find { _.id == id }
+  def getEntry(id: Long): Option[Entry] = Seq(entry1, entry2, entry3) find { _.id == id }
 }
