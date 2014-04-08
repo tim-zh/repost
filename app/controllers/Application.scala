@@ -64,6 +64,12 @@ object Application extends Controller {
     renderOption(entry) { x => Ok(views.html.entry(user, x)) }
   }
 
+  def user(id: Long) = Action { implicit req =>
+    val currentUser = getUserFromSession
+    val user = dao.getUser(id)
+    renderOption(user) { x => Ok(views.html.user(currentUser, x)) }
+  }
+
   private def renderOption[A](o: Option[A])(r: A => Result): Result = o match {
     case Some(x) => r(x)
     case None => BadRequest(views.html.badRequest())

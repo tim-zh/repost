@@ -35,11 +35,11 @@
 							<span class="caret"></span>
 						</button>
 						<ul class="dropdown-menu">
-							<li><a href="#">settings</a></li>
-							<li><form method="post" action="/">
+							<li><a href="/user/@(if (user.isDefined) user.get.id)"><button class="btn btn-link btn-sm">settings</button></a></li>
+							<li><a><form method="post" action="/">
 								<input type="hidden" name="logout" value="1">
-								<a><button type="submit" class="btn btn-link btn-sm">sign out</button></a>
-							</form></li>
+								<button type="submit" class="btn btn-link btn-sm">sign out</button>
+							</form></a></li>
 						</ul>
 					</div>
 					<button type="button" class="btn btn-default">all filters</button>

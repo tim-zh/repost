@@ -1,0 +1,8 @@
+@(currentUser: Option[User], user: User)
+@wrapper(currentUser, user.getTitle) {
+	@if(currentUser.isDefined && currentUser.get.id == user.id) {
+		<h1>Hi, @user.name</h1>
+	} else {
+		<h2>It is @user.name</h2>
+	}
+}
