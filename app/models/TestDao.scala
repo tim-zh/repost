@@ -9,11 +9,11 @@ object TestDao extends Dao {
   tag2.id = 2
   val user1 = User("user1", "pass", null, null)
   user1.id = 1
-  val entry1 = Entry(user1, "entry1", "content1<br/>bla1", Seq(tag1, tag2), null)
+  val entry1 = Entry(user1, "entry1", "content1<br/>bla1", true, Seq(tag1, tag2), null)
   entry1.id = 1
-  val entry2 = Entry(user1, "entry2", "content2<br/>bla2", Seq(tag1), null)
+  val entry2 = Entry(user1, "entry2", "content2<br/>bla2", false, Seq(tag1), null)
   entry2.id = 2
-  val entry3 = Entry(user1, "entry3", "content3<br/>bla3", Seq(tag2), null)
+  val entry3 = Entry(user1, "entry3", "content3<br/>bla3", true, Seq(tag2), null)
   entry3.id = 3
   val comment1 = Comment(user1, new Date, "comment1<br/>c1", entry1)
   val comment2 = Comment(user1, new Date, "comment2<br/>c2", entry1)
