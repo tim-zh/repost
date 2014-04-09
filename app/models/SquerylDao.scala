@@ -40,33 +40,63 @@ object SquerylDao extends Schema with Dao {
 
   def init() {
     Class.forName("org.h2.Driver")
-    SessionFactory.concreteFactory = Some(() => Session.create(DB.getConnection(), new H2Adapter)) //java.sql.DriverManager.getConnection("...")
+    SessionFactory.concreteFactory = Some(() => Session.create(DB.getConnection(), new H2Adapter))
     transaction {
       create
     }
   }
 
-  def getUser(name: String, password: String): Option[User] = {
-    inTransaction {
-      from(users)(user =>
-        where(user.name === name) select user
-      ).headOption
-    }
+  def getUser(name: String, password: String): Option[User] = inTransaction {
+    from(users)(user =>
+      where(user.name === name) select user
+    ).headOption
   }
 
-  def getUser(id: Long): Option[User] = {
-    inTransaction {
-      users.lookup(id)
-    }
+  def getUser(id: Long): Option[User] = inTransaction {
+    users.lookup(id)
   }
 
-  def getEntries(user: Option[User], filter: Filter, page: Int, itemsOnPage: Int): (Int, Seq[Entry]) = ???
+  def getEntries(user: Option[User], filter: Filter, page: Int, itemsOnPage: Int): (Long, Seq[Entry]) = inTransaction {
+    val condition = (entry: Entry) =>
+      entry.openForAll === true or entry.author.id === (user map { _.id } getOrElse -1L)
+    val size = from(entries)(entry =>
+      where(condition(entry)) compute count
+    ).single.measures
+    val xs = from(entries)(entry =>
+      where(condition(entry)) select entry
+    ).page(page * itemsOnPage, itemsOnPage)
+    (size, xs.toSeq)
+  }
 
-  def getTag(id: Long): Option[Tag] = ???
+  def getTag(id: Long): Option[Tag] = inTransaction {
+    tags.lookup(id)
+  }
 
-  def getEntriesByTag(user: Option[User], tag: Tag, page: Int, itemsOnPage: Int): (Int, Seq[Entry]) = ???
+  def getEntriesByTag(user: Option[User], tag: Tag, page: Int, itemsOnPage: Int): (Long, Seq[Entry]) = inTransaction {
+    val condition = (entry: Entry) =>
+      entry.openForAll === true or entry.author.id === (user map { _.id } getOrElse -1L) and (tag.id in entry.tags)
+    val size = from(entries)(entry =>
+      where(condition(entry)) compute count
+    ).single.measures
+    val xs = from(entries)(entry =>
+      where(condition(entry)) select entry
+    ).page(page * itemsOnPage, itemsOnPage)
+    (size, xs.toSeq)
+  }
 
-  def getEntriesBySearch(user: Option[User], query: String, page: Int, itemsOnPage: Int): (Int, Seq[Entry]) = ???
+  def getEntriesBySearch(user: Option[User], query: String, page: Int, itemsOnPage: Int): (Long, Seq[Entry]) = inTransaction {
+    val condition = (entry: Entry) =>
+      entry.openForAll === true or entry.author.id === (user map { _.id} getOrElse -1L) and (entry.title like query)
+    val size = from(entries)(entry =>
+      where(condition(entry)) compute count
+    ).single.measures
+    val xs = from(entries)(entry =>
+      where(condition(entry)) select entry
+    ).page(page * itemsOnPage, itemsOnPage)
+    (size, xs.toSeq)
+  }
 
-  def getEntry(id: Long): Option[Entry] = ???
+  def getEntry(id: Long): Option[Entry] = inTransaction {
+    entries.lookup(id)
+  }
 }
