@@ -1,4 +1,4 @@
-@(user: Option[User], currentPage: Int, pagesNumber: Int, entries: Seq[Entry], link: String = "", title: String = "")
+@(user: Option[User], currentPage: Int, pagesNumber: Long, entries: Seq[Entry], link: String = "", title: String = "")
 @wrapper(user, title) {
 	@entryList(entries)
 	@navigation(currentPage, pagesNumber, link)

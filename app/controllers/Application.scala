@@ -72,7 +72,7 @@ object Application extends Controller {
 
   private def renderOption[A](o: Option[A])(r: A => Result): Result = o match {
     case Some(x) => r(x)
-    case None => BadRequest(views.html.badRequest())
+    case None => NotFound(views.html.notFound())
   }
 
   private def getUserFromSession(implicit dao: Dao, req: Request[AnyContent]) = {

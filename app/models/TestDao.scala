@@ -30,7 +30,7 @@ object TestDao extends Dao {
 
   def getUser(id: Long): Option[User] = if (id == user1.id) Some(user1) else None
 
-  def getEntries(user: Option[User], filter: Filter, page: Int, itemsOnPage: Int): (Int, Seq[Entry]) = {
+  def getEntries(user: Option[User], filter: Filter, page: Int, itemsOnPage: Int): (Long, Seq[Entry]) = {
     require(itemsOnPage != 0)
     var list = Seq(entry1, entry2, entry3)
     val pagesNumber = list.size / itemsOnPage + (if (list.size % itemsOnPage != 0) 1 else 0)
@@ -40,7 +40,7 @@ object TestDao extends Dao {
 
   def getTag(id: Long): Option[Tag] = Seq(tag1, tag2) find { _.id == id }
 
-  def getEntriesByTag(user: Option[User], tag: Tag, page: Int, itemsOnPage: Int): (Int, Seq[Entry]) = {
+  def getEntriesByTag(user: Option[User], tag: Tag, page: Int, itemsOnPage: Int): (Long, Seq[Entry]) = {
     require(itemsOnPage != 0)
     var list = Seq(entry1, entry2, entry3) filter { _.tags.contains(tag) }
     val pagesNumber = list.size / itemsOnPage + (if (list.size % itemsOnPage != 0) 1 else 0)
@@ -48,7 +48,7 @@ object TestDao extends Dao {
     (pagesNumber, list)
   }
 
-  def getEntriesBySearch(user: Option[User], query: String, page: Int, itemsOnPage: Int): (Int, Seq[Entry]) = {
+  def getEntriesBySearch(user: Option[User], query: String, page: Int, itemsOnPage: Int): (Long, Seq[Entry]) = {
     require(itemsOnPage != 0)
     var list = Seq(entry1, entry2, entry3) filter { _.getTitle contains query }
     val pagesNumber = list.size / itemsOnPage + (if (list.size % itemsOnPage != 0) 1 else 0)
