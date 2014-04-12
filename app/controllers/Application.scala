@@ -53,7 +53,7 @@ object Application extends Controller {
     val user = getUserFromSession
     val tag = dao.getTag(title)
     renderOption(tag) { x =>
-      val (pagesNumber, entries) = dao.getEntriesByTag(user, x, 0, itemsOnPage)
+      val (pagesNumber, entries) = dao.getEntriesByTag(user, x, page, itemsOnPage)
       Ok(views.html.tag(user, page, pagesNumber, entries, x))
     }
   }

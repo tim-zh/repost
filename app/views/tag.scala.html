@@ -1,5 +1,5 @@
 @(user: Option[User], currentPage: Int, pagesNumber: Long, entries: Seq[Entry], tag: Tag)
 @wrapper(user, tag.getTitle) {
 	@entryList(entries)
-	@navigation(currentPage, pagesNumber, s"/tag/${tag.id}")
+	@navigation(currentPage, pagesNumber, s"/tag/${tag.title}")
 }

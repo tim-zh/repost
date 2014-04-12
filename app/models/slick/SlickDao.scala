@@ -17,8 +17,10 @@ object SlickDao extends Dao {
   private val db = Database.forDataSource(DB.getDataSource("default"))
   private val ddl = users.ddl ++ entries.ddl ++ comments.ddl ++ tags.ddl ++ filters.ddl ++
     entryTagRelation.ddl ++ filterUserRelation.ddl
-  private def isEntryVisible(e: Entry)(implicit user: Option[models.User]) =
-    e.openForAll || (LiteralColumn(user.isDefined) && e.author === user.get.id)
+  private def isEntryVisible(e: Entry)(implicit user: Option[models.User]) = e.openForAll || (user match {
+    case Some(x) => e.author === x.id
+    case None => false
+  })
 
   def init() {
     db withDynSession {
@@ -43,7 +45,7 @@ object SlickDao extends Dao {
         (0, 0),
         (0, 1),
         (1, 0),
-        (2, 1))
+        (2, 0))
     }
   }
 
@@ -79,9 +81,9 @@ object SlickDao extends Dao {
     require(itemsOnPage != 0)
     db withDynTransaction {
       implicit val impUser = user
-      val pagesNumber = entries.filter(isEntryVisible).length.run
+      val pagesNumber = Math.ceil(entries.filter(isEntryVisible).length.run / itemsOnPage.asInstanceOf[Double]).asInstanceOf[Long]
       val xs = entries.filter(isEntryVisible).drop(page * itemsOnPage).take(itemsOnPage).list map { t =>
-        val x = models.Entry(null, t._4, t._5, t._6, Nil, Nil)
+        val x = models.Entry(getUser(t._3).get, t._4, t._5, t._6, getTags(t._1), Nil)
         x.id = t._1
         x.version = t._2
         x
@@ -110,9 +112,9 @@ object SlickDao extends Dao {
         etr <- entryTagRelation
         if etr.tag === tag.id && entry.id === etr.entry && isEntryVisible(entry)
       } yield entry
-      val pagesNumber = q.length.run
+      val pagesNumber = Math.ceil(q.length.run / itemsOnPage.asInstanceOf[Double]).asInstanceOf[Long]
       val xs = q.drop(page * itemsOnPage).take(itemsOnPage).list map { t =>
-        val x = models.Entry(null, t._4, t._5, t._6, Nil, Nil)
+        val x = models.Entry(getUser(t._3).get, t._4, t._5, t._6, getTags(t._1), Nil)
         x.id = t._1
         x.version = t._2
         x
@@ -126,9 +128,9 @@ object SlickDao extends Dao {
     db withDynTransaction {
       implicit val impUser = user
       val q = (e: Entry) => e.title.like("%" + query + "%") && isEntryVisible(e)
-      val pagesNumber = entries.filter(q).length.run
+      val pagesNumber = Math.ceil(entries.filter(q).length.run / itemsOnPage.asInstanceOf[Double]).asInstanceOf[Long]
       val xs = entries.filter(q).drop(page * itemsOnPage).take(itemsOnPage).list map { t =>
-        val x = models.Entry(null, t._4, t._5, t._6, Nil, Nil)
+        val x = models.Entry(getUser(t._3).get, t._4, t._5, t._6, getTags(t._1), Nil)
         x.id = t._1
         x.version = t._2
         x
@@ -141,7 +143,34 @@ object SlickDao extends Dao {
     db withDynTransaction {
       implicit val impUser = user
       entries.filter(e => e.id === id && isEntryVisible(e)).firstOption map { t =>
-        val x = models.Entry(null, t._4, t._5, t._6, Nil, Nil)
+        val x = models.Entry(getUser(t._3).get, t._4, t._5, t._6, getTags(t._1), getComments(t._1))
+        x.id = t._1
+        x.version = t._2
+        x
+      }
+    }
+  }
+
+  def getTags(entryId: Long): Seq[models.Tag] = {
+    db withDynTransaction {
+      val q = for {
+        tag <- tags
+        etr <- entryTagRelation
+        if etr.entry === entryId && etr.tag === tag.id
+      } yield tag
+      q.list map { t =>
+        val x = models.Tag(t._3)
+        x.id = t._1
+        x.version = t._2
+        x
+      }
+    }
+  }
+
+  def getComments(entryId: Long): Seq[models.Comment] = {
+    db withDynTransaction {
+      comments.filter(_.id === entryId).list map { t =>
+        val x = models.Comment(getUser(t._3).get, t._4, t._5, null)
         x.id = t._1
         x.version = t._2
         x
