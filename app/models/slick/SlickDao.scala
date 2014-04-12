@@ -26,26 +26,27 @@ object SlickDao extends Dao {
     db withDynSession {
       ddl.create
 
-      users ++= Seq(
-        (0, 0, "user1", "pass"),
-        (1, 0, "user2", "passs"))
-      entries ++= Seq(
-        (0, 0, 0, "entry1", "content1<br/>bla1", true),
-        (1, 0, 0, "entry2", "content2<br/>bla2", false),
-        (2, 0, 1, "entry3", "content3<br/>bla3", true))
-      comments map(x => (x.id, x.version, x.author, x.content, x.entry)) ++= Seq(
-        (0, 0, 0, "comment1<br/>c1", 0),
-        (1, 0, 0, "comment2<br/>c2", 0),
-        (2, 0, 1, "comment3<br/>c3", 0),
-        (3, 0, 0, "comment4<br/>c4", 1))
-      tags ++= Seq(
-        (0, 0, "tag1"),
-        (1, 0, "tag2"))
+      users map (x => (x.name, x.password)) ++= Seq(
+        ("user1", "pass"),
+        ("user2", "passs"))
+      entries map (x => (x.author, x.title, x.content, x.openForAll)) ++= Seq(
+        (1, "entry1", "content1<br/>bla1", true),
+        (1, "entry2", "content2<br/>bla2", false),
+        (2, "entry3", "content3<br/>bla3", true),
+        (1, "entry4", "content4<br/>bla4", true))
+      comments map (x => (x.author, x.content, x.entry)) ++= Seq(
+        (1, "comment1<br/>c1", 1),
+        (1, "comment2<br/>c2", 1),
+        (2, "comment3<br/>c3", 1),
+        (1, "comment4<br/>c4", 2))
+      tags map (x => (x.title)) ++= Seq(
+        ("tag1"),
+        ("tag2"))
       entryTagRelation ++= Seq(
-        (0, 0),
-        (0, 1),
-        (1, 0),
-        (2, 0))
+        (1, 1),
+        (1, 2),
+        (2, 1),
+        (3, 1))
     }
   }
 

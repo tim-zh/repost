@@ -5,8 +5,8 @@ import java.sql.Date
 import scala.slick.lifted
 
 class User(ltag: lifted.Tag) extends Table[(Long, Long, String, String)](ltag, "users") {
-  def id = column[Long]("id", O.PrimaryKey)
-  def version = column[Long]("version")
+  def id = column[Long]("id", O.PrimaryKey, O.AutoInc)
+  def version = column[Long]("version", O.Default(0))
   def name = column[String]("name")
   def password = column[String]("password")
   def * = (id, version, name, password)
@@ -15,8 +15,8 @@ class User(ltag: lifted.Tag) extends Table[(Long, Long, String, String)](ltag, "
 }
 
 class Entry(ltag: lifted.Tag) extends Table[(Long, Long, Long, String, String, Boolean)](ltag, "entries") {
-  def id = column[Long]("id", O.PrimaryKey)
-  def version = column[Long]("version")
+  def id = column[Long]("id", O.PrimaryKey, O.AutoInc)
+  def version = column[Long]("version", O.Default(0))
   def author = column[Long]("author")
   def title = column[String]("title")
   def content = column[String]("content")
@@ -27,8 +27,8 @@ class Entry(ltag: lifted.Tag) extends Table[(Long, Long, Long, String, String, B
 }
 
 class Comment(ltag: lifted.Tag) extends Table[(Long, Long, Long, Date, String, Long)](ltag, "comments") {
-  def id = column[Long]("id", O.PrimaryKey)
-  def version = column[Long]("version")
+  def id = column[Long]("id", O.PrimaryKey, O.AutoInc)
+  def version = column[Long]("version", O.Default(0))
   def author = column[Long]("author")
   def date = column[Date]("date", O.Default(new Date((new java.util.Date).getTime)))
   def content = column[String]("content")
@@ -39,15 +39,15 @@ class Comment(ltag: lifted.Tag) extends Table[(Long, Long, Long, Date, String, L
 }
 
 class Tag(ltag: lifted.Tag) extends Table[(Long, Long, String)](ltag, "tags") {
-  def id = column[Long]("id", O.PrimaryKey)
-  def version = column[Long]("version")
+  def id = column[Long]("id", O.PrimaryKey, O.AutoInc)
+  def version = column[Long]("version", O.Default(0))
   def title = column[String]("title")
   def * = (id, version, title)
 }
 
 class Filter(ltag: lifted.Tag) extends Table[(Long, Long, String, Option[Date], Option[Date])](ltag, "filters") {
-  def id = column[Long]("id", O.PrimaryKey)
-  def version = column[Long]("version")
+  def id = column[Long]("id", O.PrimaryKey, O.AutoInc)
+  def version = column[Long]("version", O.Default(0))
   def title = column[String]("title")
   def startDate = column[Option[Date]]("start_date")
   def endDate = column[Option[Date]]("end_date")
