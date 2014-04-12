@@ -1,6 +1,7 @@
 package models.slick
 
 import scala.slick.driver.H2Driver.simple._
+import Database.dynamicSession
 import play.api.db.DB
 import play.api.Play.current
 import models.Dao
@@ -16,9 +17,11 @@ object SlickDao extends Dao {
   private val db = Database.forDataSource(DB.getDataSource("default"))
   private val ddl = users.ddl ++ entries.ddl ++ comments.ddl ++ tags.ddl ++ filters.ddl ++
     entryTagRelation.ddl ++ filterUserRelation.ddl
+  private def isEntryVisible(e: Entry)(implicit user: Option[models.User]) =
+    e.openForAll || (LiteralColumn(user.isDefined) && e.author === user.get.id)
 
   def init() {
-    db withSession { implicit session =>
+    db withDynSession {
       ddl.create
 
       users ++= Seq(
@@ -45,20 +48,104 @@ object SlickDao extends Dao {
   }
 
   def dropSchema() {
-    ddl.drop
+    db withDynTransaction {
+      ddl.drop
+    }
   }
 
-  def getUser(name: String, password: String): Option[models.User] = ???
+  def getUser(name: String, password: String): Option[models.User] = {
+    db withDynTransaction {
+      users.filter(u => u.name === name && u.password === password).firstOption map { t =>
+        val x = models.User(t._3, t._4, Nil, Nil)
+        x.id = t._1
+        x.version = t._2
+        x
+      }
+    }
+  }
 
-  def getUser(id: Long): Option[models.User] = ???
+  def getUser(id: Long): Option[models.User] = {
+    db withDynTransaction {
+      users.filter(_.id === id).firstOption map { t =>
+        val x = models.User(t._3, t._4, Nil, Nil)
+        x.id = t._1
+        x.version = t._2
+        x
+      }
+    }
+  }
 
-  def getEntries(user: Option[models.User], filter: models.Filter, page: Int, itemsOnPage: Int): (Long, Seq[models.Entry]) = ???
+  def getEntries(user: Option[models.User], filter: models.Filter, page: Int, itemsOnPage: Int): (Long, Seq[models.Entry]) = {
+    require(itemsOnPage != 0)
+    db withDynTransaction {
+      implicit val impUser = user
+      val pagesNumber = entries.filter(isEntryVisible).length.run
+      val xs = entries.filter(isEntryVisible).drop(page * itemsOnPage).take(itemsOnPage).list map { t =>
+        val x = models.Entry(null, t._4, t._5, t._6, Nil, Nil)
+        x.id = t._1
+        x.version = t._2
+        x
+      }
+      (pagesNumber, xs)
+    }
+  }
 
-  def getTag(title: String): Option[models.Tag] = ???
+  def getTag(title: String): Option[models.Tag] = {
+    db withDynTransaction {
+      tags.filter(_.title === title).firstOption map { t =>
+        val x = models.Tag(t._3)
+        x.id = t._1
+        x.version = t._2
+        x
+      }
+    }
+  }
 
-  def getEntriesByTag(user: Option[models.User], tag: models.Tag, page: Int, itemsOnPage: Int): (Long, Seq[models.Entry]) = ???
+  def getEntriesByTag(user: Option[models.User], tag: models.Tag, page: Int, itemsOnPage: Int): (Long, Seq[models.Entry]) = {
+    require(itemsOnPage != 0)
+    db withDynTransaction {
+      implicit val impUser = user
+      val q = for {
+        entry <- entries
+        etr <- entryTagRelation
+        if etr.tag === tag.id && entry.id === etr.entry && isEntryVisible(entry)
+      } yield entry
+      val pagesNumber = q.length.run
+      val xs = q.drop(page * itemsOnPage).take(itemsOnPage).list map { t =>
+        val x = models.Entry(null, t._4, t._5, t._6, Nil, Nil)
+        x.id = t._1
+        x.version = t._2
+        x
+      }
+      (pagesNumber, xs)
+    }
+  }
 
-  def getEntriesBySearch(user: Option[models.User], query: String, page: Int, itemsOnPage: Int): (Long, Seq[models.Entry]) = ???
+  def getEntriesBySearch(user: Option[models.User], query: String, page: Int, itemsOnPage: Int): (Long, Seq[models.Entry]) = {
+    require(itemsOnPage != 0)
+    db withDynTransaction {
+      implicit val impUser = user
+      val q = (e: Entry) => e.title.like("%" + query + "%") && isEntryVisible(e)
+      val pagesNumber = entries.filter(q).length.run
+      val xs = entries.filter(q).drop(page * itemsOnPage).take(itemsOnPage).list map { t =>
+        val x = models.Entry(null, t._4, t._5, t._6, Nil, Nil)
+        x.id = t._1
+        x.version = t._2
+        x
+      }
+      (pagesNumber, xs)
+    }
+  }
 
-  def getEntry(user: Option[models.User], id: Long): Option[models.Entry] = ???
+  def getEntry(user: Option[models.User], id: Long): Option[models.Entry] = {
+    db withDynTransaction {
+      implicit val impUser = user
+      entries.filter(e => e.id === id && isEntryVisible(e)).firstOption map { t =>
+        val x = models.Entry(null, t._4, t._5, t._6, Nil, Nil)
+        x.id = t._1
+        x.version = t._2
+        x
+      }
+    }
+  }
 }
