@@ -49,9 +49,9 @@ object Application extends Controller {
     }
   }
 
-  def tag(id: Long, page: Int) = Action { implicit req =>
+  def tag(title: String, page: Int) = Action { implicit req =>
     val user = getUserFromSession
-    val tag = dao.getTag(id)
+    val tag = dao.getTag(title)
     renderOption(tag) { x =>
       val (pagesNumber, entries) = dao.getEntriesByTag(user, x, 0, itemsOnPage)
       Ok(views.html.tag(user, page, pagesNumber, entries, x))
@@ -60,7 +60,7 @@ object Application extends Controller {
 
   def entry(id: Long) = Action { implicit req =>
     val user = getUserFromSession
-    val entry = dao.getEntry(id)
+    val entry = dao.getEntry(user, id)
     renderOption(entry) { x => Ok(views.html.entry(user, x)) }
   }
 

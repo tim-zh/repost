@@ -38,7 +38,7 @@ object TestDao extends Dao {
     (pagesNumber, list)
   }
 
-  def getTag(id: Long): Option[Tag] = Seq(tag1, tag2) find { _.id == id }
+  def getTag(title: String): Option[Tag] = Seq(tag1, tag2) find { _.title == title }
 
   def getEntriesByTag(user: Option[User], tag: Tag, page: Int, itemsOnPage: Int): (Long, Seq[Entry]) = {
     require(itemsOnPage != 0)
@@ -56,5 +56,5 @@ object TestDao extends Dao {
     (pagesNumber, list)
   }
 
-  def getEntry(id: Long): Option[Entry] = Seq(entry1, entry2, entry3) find { _.id == id }
+  def getEntry(user: Option[User], id: Long): Option[Entry] = Seq(entry1, entry2, entry3) find { _.id == id }
 }

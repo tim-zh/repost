@@ -7,11 +7,11 @@ trait Dao {
 
   def getEntries(user: Option[User], filter: Filter, page: Int, itemsOnPage: Int): (Long, Seq[Entry])
 
-  def getTag(id: Long): Option[Tag]
+  def getTag(title: String): Option[Tag]
 
   def getEntriesByTag(user: Option[User], tag: Tag, page: Int, itemsOnPage: Int): (Long, Seq[Entry])
 
   def getEntriesBySearch(user: Option[User], query: String, page: Int, itemsOnPage: Int): (Long, Seq[Entry])
 
-  def getEntry(id: Long): Option[Entry]
+  def getEntry(user: Option[User], id: Long): Option[Entry]
 }

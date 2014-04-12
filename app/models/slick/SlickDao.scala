@@ -54,11 +54,11 @@ object SlickDao extends Dao {
 
   def getEntries(user: Option[models.User], filter: models.Filter, page: Int, itemsOnPage: Int): (Long, Seq[models.Entry]) = ???
 
-  def getTag(id: Long): Option[models.Tag] = ???
+  def getTag(title: String): Option[models.Tag] = ???
 
   def getEntriesByTag(user: Option[models.User], tag: models.Tag, page: Int, itemsOnPage: Int): (Long, Seq[models.Entry]) = ???
 
   def getEntriesBySearch(user: Option[models.User], query: String, page: Int, itemsOnPage: Int): (Long, Seq[models.Entry]) = ???
 
-  def getEntry(id: Long): Option[models.Entry] = ???
+  def getEntry(user: Option[models.User], id: Long): Option[models.Entry] = ???
 }
