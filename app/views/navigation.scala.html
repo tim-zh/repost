@@ -1,4 +1,4 @@
-@(currentPage: Int, pagesNumber: Int, link: String)
+@(currentPage: Int, pagesNumber: Long, link: String)
 @require(pagesNumber >= 0)
 @if(pagesNumber > 1) {
 	<ul class="pagination previous-next-pagination">
@@ -15,7 +15,7 @@
 	</ul>
 	<div id="pageScroll">
 		<ul class="pagination">
-		@for(i <- 0 until pagesNumber) {
+		@for(i <- 0L until pagesNumber) {
 			<li@(if(currentPage == i) " class=active")><a href="@link/@i">@i</a></li>
 		}
 		</ul>

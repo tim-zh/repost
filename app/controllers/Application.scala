@@ -20,14 +20,14 @@ object Application extends Controller {
       loginForm.bindFromRequest.fold(
         badForm => {
           val user = getUserFromSession
-          val (pagesNumber, entries) = dao.getEntries(user, null, page, itemsOnPage)
+          val (pagesNumber, entries) = dao.getEntries(user, page, itemsOnPage)
           Ok(views.html.entries(user, page, pagesNumber, entries))
         },
         loginData => {
           val user = dao.getUser(loginData.name, loginData.password)
           user match {
             case Some(x) =>
-              val (pagesNumber, entries) = dao.getEntries(user, null, page, itemsOnPage)
+              val (pagesNumber, entries) = dao.getEntries(user, page, itemsOnPage)
               Ok(views.html.entries(user, page, pagesNumber, entries)).withSession(req.session +("user", x.id + ""))
             case None =>
               Ok(views.html.entries(None, 0, 0, Nil))
@@ -49,18 +49,18 @@ object Application extends Controller {
     }
   }
 
-  def tag(id: Long, page: Int) = Action { implicit req =>
+  def tag(title: String, page: Int) = Action { implicit req =>
     val user = getUserFromSession
-    val tag = dao.getTag(id)
+    val tag = dao.getTag(title)
     renderOption(tag) { x =>
-      val (pagesNumber, entries) = dao.getEntriesByTag(user, x, 0, itemsOnPage)
+      val (pagesNumber, entries) = dao.getEntriesByTag(user, x, page, itemsOnPage)
       Ok(views.html.tag(user, page, pagesNumber, entries, x))
     }
   }
 
   def entry(id: Long) = Action { implicit req =>
     val user = getUserFromSession
-    val entry = dao.getEntry(id)
+    val entry = dao.getEntry(user, id)
     renderOption(entry) { x => Ok(views.html.entry(user, x)) }
   }
 
@@ -72,7 +72,7 @@ object Application extends Controller {
 
   private def renderOption[A](o: Option[A])(r: A => Result): Result = o match {
     case Some(x) => r(x)
-    case None => BadRequest(views.html.badRequest())
+    case None => NotFound(views.html.notFound())
   }
 
   private def getUserFromSession(implicit dao: Dao, req: Request[AnyContent]) = {
