@@ -31,7 +31,8 @@ object SquerylDao extends Schema with Dao {
   ))
 
   on(tags)(tag => declare(
-    tag.id is (primaryKey, autoIncremented)
+    tag.id is (primaryKey, autoIncremented),
+    tag.title is indexed
   ))
 
   on(filters)(filter => declare(
@@ -42,7 +43,22 @@ object SquerylDao extends Schema with Dao {
     Class.forName("org.h2.Driver")
     SessionFactory.concreteFactory = Some(() => Session.create(DB.getConnection(), new H2Adapter))
     transaction {
-      create
+      try {
+        create
+        users.insert(Seq(TestDao.user1))
+        entries.insert(Seq(TestDao.entry1, TestDao.entry2, TestDao.entry3))
+        comments.insert(Seq(TestDao.comment1, TestDao.comment2, TestDao.comment3, TestDao.comment4))
+        tags.insert(Seq(TestDao.tag1, TestDao.tag2))
+      }
+      catch {
+        case _ =>
+          drop
+          create
+          users.insert(Seq(TestDao.user1))
+          entries.insert(Seq(TestDao.entry1, TestDao.entry2, TestDao.entry3))
+          comments.insert(Seq(TestDao.comment1, TestDao.comment2, TestDao.comment3, TestDao.comment4))
+          tags.insert(Seq(TestDao.tag1, TestDao.tag2))
+      }
     }
   }
 
@@ -56,7 +72,7 @@ object SquerylDao extends Schema with Dao {
     users.lookup(id)
   }
 
-  def getEntries(user: Option[User], filter: Filter, page: Int, itemsOnPage: Int): (Long, Seq[Entry]) = inTransaction {
+  def getEntries(user: Option[User], page: Int, itemsOnPage: Int): (Long, Seq[Entry]) = inTransaction {
     val condition = (entry: Entry) =>
       entry.openForAll === true or entry.author.id === (user map { _.id } getOrElse -1L)
     val size = from(entries)(entry =>
@@ -68,13 +84,13 @@ object SquerylDao extends Schema with Dao {
     (size, xs.toSeq)
   }
 
-  def getTag(id: Long): Option[Tag] = inTransaction {
-    tags.lookup(id)
+  def getTag(title: String): Option[Tag] = inTransaction {
+    tags.where(_.title === title).headOption
   }
 
   def getEntriesByTag(user: Option[User], tag: Tag, page: Int, itemsOnPage: Int): (Long, Seq[Entry]) = inTransaction {
     val condition = (entry: Entry) =>
-      entry.openForAll === true or entry.author.id === (user map { _.id } getOrElse -1L) and (tag.id in entry.tags)
+      entry.openForAll === true or entry.author.id === (user map { _.id } getOrElse -1L) and (entry.tags.contains(tag.id) === true)
     val size = from(entries)(entry =>
       where(condition(entry)) compute count
     ).single.measures
@@ -96,7 +112,7 @@ object SquerylDao extends Schema with Dao {
     (size, xs.toSeq)
   }
 
-  def getEntry(id: Long): Option[Entry] = inTransaction {
-    entries.lookup(id)
+  def getEntry(user: Option[User], id: Long): Option[Entry] = inTransaction {
+    entries.lookup(id) filter (entry => entry.openForAll || (user.isDefined && entry.author.id == user.get.id))
   }
 }
