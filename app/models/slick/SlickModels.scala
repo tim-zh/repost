@@ -14,14 +14,15 @@ class User(ltag: lifted.Tag) extends Table[(Long, Long, String, String)](ltag, "
   def namePasswordIdx = index("name_password_idx", (name, password), unique = true)
 }
 
-class Entry(ltag: lifted.Tag) extends Table[(Long, Long, Long, String, String, Boolean)](ltag, "entries") {
+class Entry(ltag: lifted.Tag) extends Table[(Long, Long, Long, String, String, Date, Boolean)](ltag, "entries") {
   def id = column[Long]("id", O.PrimaryKey, O.AutoInc)
   def version = column[Long]("version", O.Default(0))
   def author = column[Long]("author")
   def title = column[String]("title")
   def content = column[String]("content")
+  def date = column[Date]("date", O.Default(new Date((new java.util.Date).getTime)))
   def openForAll = column[Boolean]("open_for_all")
-  def * = (id, version, author, title, content, openForAll)
+  def * = (id, version, author, title, content, date, openForAll)
   def titleIdx = index("title_idx", title)
   def authorFk = foreignKey("entry_author_fk", author, SlickDao.users)(_.id)
 }
@@ -43,6 +44,7 @@ class Tag(ltag: lifted.Tag) extends Table[(Long, Long, String)](ltag, "tags") {
   def version = column[Long]("version", O.Default(0))
   def title = column[String]("title")
   def * = (id, version, title)
+  def titleIdx = index("title_idx", title)
 }
 
 class Filter(ltag: lifted.Tag) extends Table[(Long, Long, String, Option[Date], Option[Date])](ltag, "filters") {
@@ -52,6 +54,7 @@ class Filter(ltag: lifted.Tag) extends Table[(Long, Long, String, Option[Date], 
   def startDate = column[Option[Date]]("start_date")
   def endDate = column[Option[Date]]("end_date")
   def * = (id, version, title, startDate, endDate)
+  def titleIdx = index("title_idx", title)
 }
 
 class EntryTag(ltag: lifted.Tag) extends Table[(Long, Long)](ltag, "entries_tags") {
@@ -60,6 +63,14 @@ class EntryTag(ltag: lifted.Tag) extends Table[(Long, Long)](ltag, "entries_tags
   def * = (entry, tag)
   def entryFk = foreignKey("entry_tag_entry_fk", entry, SlickDao.entries)(_.id)
   def tagFk = foreignKey("entry_tag_tag_fk", tag, SlickDao.tags)(_.id)
+}
+
+class FilterTag(ltag: lifted.Tag) extends Table[(Long, Long)](ltag, "filters_tags") {
+  def filter = column[Long]("filter_id")
+  def tag = column[Long]("tag_id")
+  def * = (filter, tag)
+  def filterFk = foreignKey("filter_tag_entry_fk", filter, SlickDao.filters)(_.id)
+  def tagFk = foreignKey("filter_tag_tag_fk", tag, SlickDao.tags)(_.id)
 }
 
 class FilterUser(ltag: lifted.Tag) extends Table[(Long, Long)](ltag, "filters_users") {

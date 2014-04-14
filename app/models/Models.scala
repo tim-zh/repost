@@ -23,6 +23,7 @@ case class User(name: String,
 case class Entry(author: User,
                  title: String,
                  content: String,
+                 date: Date,
                  openForAll: Boolean,
                  tags: Seq[Tag],
                  var comments: Seq[Comment]) extends Entity {

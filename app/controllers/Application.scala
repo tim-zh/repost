@@ -20,14 +20,14 @@ object Application extends Controller {
       loginForm.bindFromRequest.fold(
         badForm => {
           val user = getUserFromSession
-          val (pagesNumber, entries) = dao.getEntries(user, null, page, itemsOnPage)
+          val (pagesNumber, entries) = dao.getEntries(user, page, itemsOnPage)
           Ok(views.html.entries(user, page, pagesNumber, entries))
         },
         loginData => {
           val user = dao.getUser(loginData.name, loginData.password)
           user match {
             case Some(x) =>
-              val (pagesNumber, entries) = dao.getEntries(user, null, page, itemsOnPage)
+              val (pagesNumber, entries) = dao.getEntries(user, page, itemsOnPage)
               Ok(views.html.entries(user, page, pagesNumber, entries)).withSession(req.session +("user", x.id + ""))
             case None =>
               Ok(views.html.entries(None, 0, 0, Nil))
@@ -55,6 +55,15 @@ object Application extends Controller {
     renderOption(tag) { x =>
       val (pagesNumber, entries) = dao.getEntriesByTag(user, x, page, itemsOnPage)
       Ok(views.html.tag(user, page, pagesNumber, entries, x))
+    }
+  }
+
+  def filter(title: String, page: Int) = Action { implicit req =>
+    val user = getUserFromSession
+    val filter = dao.getFilter(title)
+    renderOption(filter) { x =>
+      val (pagesNumber, entries) = dao.getEntriesByFilter(user, x, page, itemsOnPage)
+      Ok(views.html.filter(user, page, pagesNumber, entries, x))
     }
   }
 

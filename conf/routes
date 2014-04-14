@@ -1,17 +1,20 @@
-GET         /$page<\d+>              controllers.Application.index(page: Int)
-POST        /$page<\d+>              controllers.Application.index(page: Int)
-GET         /                        controllers.Application.index(page: Int = 0)
-POST        /                        controllers.Application.index(page: Int = 0)
+GET         /$page<\d+>                 controllers.Application.index(page: Int)
+POST        /$page<\d+>                 controllers.Application.index(page: Int)
+GET         /                           controllers.Application.index(page: Int = 0)
+POST        /                           controllers.Application.index(page: Int = 0)
 
-POST        /search/:page            controllers.Application.search(page: Int)
-POST        /search                  controllers.Application.search(page: Int = 0)
+POST        /search/:page               controllers.Application.search(page: Int)
+POST        /search                     controllers.Application.search(page: Int = 0)
 
-GET         /tag/:title/:page        controllers.Application.tag(title: String, page: Int)
-GET         /tag/:title              controllers.Application.tag(title: String, page: Int = 0)
+GET         /tag/:title/:page           controllers.Application.tag(title: String, page: Int)
+GET         /tag/:title                 controllers.Application.tag(title: String, page: Int = 0)
 
-GET         /entry/:id               controllers.Application.entry(id: Long)
+GET         /filter/:title/:page        controllers.Application.filter(title: String, page: Int)
+GET         /filter/:title              controllers.Application.filter(title: String, page: Int = 0)
 
-GET         /user/:id                controllers.Application.user(id: Long)
+GET         /entry/:id                  controllers.Application.entry(id: Long)
+
+GET         /user/:id                   controllers.Application.user(id: Long)
 
 # Map static resources from the /public folder to the /assets URL path
-GET         /assets/*file            controllers.Assets.at(path="/public", file)
+GET         /assets/*file               controllers.Assets.at(path="/public", file)
