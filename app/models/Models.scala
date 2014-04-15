@@ -5,19 +5,13 @@ import java.util.Date
 sealed trait Entity {
   var id: Long = _
   var version: Long = _
-
-  def getTitle: String = ""
-
-  def getDescription: String = ""
-
-  override def toString: String = getTitle
 }
 
 case class User(name: String,
                 password: String,
                 var entries: Seq[Entry],
                 var comments: Seq[Comment]) extends Entity {
-  override def getTitle = name
+  override def toString: String = name
 }
 
 case class Entry(author: User,
@@ -27,9 +21,7 @@ case class Entry(author: User,
                  openForAll: Boolean,
                  tags: Seq[Tag],
                  var comments: Seq[Comment]) extends Entity {
-  override def getTitle = title
-
-  override def getDescription: String = title take 128
+  override def toString: String = title
 }
 
 case class Comment(author: User,
@@ -38,7 +30,7 @@ case class Comment(author: User,
                    entry: Entry) extends Entity
 
 case class Tag(title: String) extends Entity {
-  override def getTitle: String = title
+  override def toString: String = title
 }
 
 case class Filter(title: String,
@@ -46,7 +38,5 @@ case class Filter(title: String,
                   authors: Seq[User],
                   startDate: Option[Date],
                   endDate: Option[Date]) extends Entity {
-  override def getTitle: String = title
-
-  def this() = this("", Nil, Nil, Some(new Date), Some(new Date))
+  override def toString: String = title
 }

@@ -50,7 +50,7 @@ object TestDao extends Dao {
 
   def getEntriesBySearch(user: Option[User], query: String, page: Int, itemsOnPage: Int): (Long, Seq[Entry]) = {
     require(itemsOnPage != 0)
-    var list = Seq(entry1, entry2, entry3) filter { _.getTitle contains query }
+    var list = Seq(entry1, entry2, entry3) filter { _.title contains query }
     val pagesNumber = list.size / itemsOnPage + (if (list.size % itemsOnPage != 0) 1 else 0)
     list = list drop (page * itemsOnPage) take itemsOnPage
     (pagesNumber, list)
