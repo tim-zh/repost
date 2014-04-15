@@ -1,5 +1,0 @@
-@(user: Option[User], currentPage: Int, pagesNumber: Long, entries: Seq[Entry], filter: models.Filter)
-@wrapper(user, filter.getTitle) {
-	@entryList(entries)
-	@navigation(currentPage, pagesNumber, s"/filter/${filter.title}")
-}
