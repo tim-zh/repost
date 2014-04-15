@@ -13,28 +13,32 @@ object Application extends Controller {
   case class LoginData(name: String, password: String)
 
   def index(page: Int) = Action { implicit req =>
-    if (req.method == "POST" && (req.body.asFormUrlEncoded map { _.get("logout") } getOrElse None map { _(0) } getOrElse null) == "1")
-      Ok(views.html.entries(None, 0, 0, Nil)).withNewSession
-    else {
-      val loginForm = Form(mapping("name" -> nonEmptyText, "pass" -> nonEmptyText)(LoginData.apply)(LoginData.unapply))
-      loginForm.bindFromRequest.fold(
-        badForm => {
-          val user = getUserFromSession
-          val (pagesNumber, entries) = dao.getEntries(user, page, itemsOnPage)
-          Ok(views.html.entries(user, page, pagesNumber, entries))
-        },
-        loginData => {
-          val user = dao.getUser(loginData.name, loginData.password)
-          user match {
-            case Some(x) =>
-              val (pagesNumber, entries) = dao.getEntries(user, page, itemsOnPage)
-              Ok(views.html.entries(user, page, pagesNumber, entries)).withSession(req.session +("user", x.id + ""))
-            case None =>
-              Ok(views.html.entries(None, 0, 0, Nil))
-          }
+    val user = getUserFromSession
+    val (pagesNumber, entries) = dao.getEntries(user, page, itemsOnPage)
+    Ok(views.html.entries(user, page, pagesNumber, entries))
+  }
+
+  def auth() = Action { implicit req =>
+    val loginForm = Form(mapping("name" -> nonEmptyText, "pass" -> nonEmptyText)(LoginData.apply)(LoginData.unapply))
+    loginForm.bindFromRequest.fold(
+      badForm => Redirect(routes.Application.index(0)),
+      loginData => {
+        val user = dao.getUser(loginData.name, loginData.password)
+        user match {
+          case Some(x) =>
+            Redirect(routes.Application.index(0)).withSession(req.session +("user", x.id + ""))
+          case None =>
+            Redirect(routes.Application.index(0))
         }
-      )
-    }
+      }
+    )
+  }
+
+  def logout() = Action { implicit req =>
+    if (req.method == "POST")
+      Redirect(routes.Application.index(0)).withNewSession
+    else
+      Redirect(routes.Application.index(0))
   }
 
   def search(page: Int) = Action { implicit req =>

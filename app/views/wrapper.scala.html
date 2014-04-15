@@ -37,8 +37,7 @@
 						</button>
 						<ul class="dropdown-menu">
 							<li><a href="/user/@(if (user.isDefined) user.get.id)"><button class="btn btn-link btn-sm">settings</button></a></li>
-							<li><a><form method="post" action="/">
-								<input type="hidden" name="logout" value="1">
+							<li><a><form method="post" action="/logout">
 								<button type="submit" class="btn btn-link btn-sm">sign out</button>
 							</form></a></li>
 						</ul>
@@ -46,7 +45,7 @@
 					<button type="button" class="btn btn-default">all filters</button>
 				</div>
 			} else {
-				<form method="post" action="/" class="navbar-form navbar-left" role="form">
+				<form method="post" action="/auth" class="navbar-form navbar-left" role="form">
 					<div class="form-group input-group-sm">
 						<input type="text" placeholder="login" class="form-control" name="name">
 					</div>

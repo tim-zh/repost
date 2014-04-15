@@ -1,3 +1,6 @@
+POST        /auth                    controllers.Application.auth()
+POST        /logout                  controllers.Application.logout()
+
 GET         /$page<\d+>              controllers.Application.index(page: Int)
 POST        /$page<\d+>              controllers.Application.index(page: Int)
 GET         /                        controllers.Application.index(page: Int = 0)
