@@ -15,6 +15,9 @@ object SquerylDao extends Schema with Dao {
   val tags = table[Tag]
   val filters = table[Filter]
 
+  def condition(entry: Entry)(implicit user: Option[models.User]) =
+    entry.openForAll === true or entry.author.id === (user map (_.id) getOrElse -1L)
+
   on(users)(user => declare(
     user.id is (primaryKey, autoIncremented),
     columns(user.name, user.password) are indexed,
@@ -84,9 +87,8 @@ object SquerylDao extends Schema with Dao {
     users.lookup(id) map ModelConverter.get
   }
 
-  def getEntries(user: Option[User], page: Int, itemsOnPage: Int): (Long, Seq[models.Entry]) = inTransaction {
-    val condition = (entry: Entry) =>
-      entry.openForAll === true or entry.author.id === (user map { _.id } getOrElse -1L)
+  def getEntries(user: Option[models.User], page: Int, itemsOnPage: Int): (Long, Seq[models.Entry]) = inTransaction {
+    implicit val impUser = user
     val size = from(entries)(entry =>
       where(condition(entry)) compute count
     ).single.measures
@@ -100,31 +102,29 @@ object SquerylDao extends Schema with Dao {
     tags.where(_.title === title).headOption map ModelConverter.get
   }
 
-  def getEntriesByTag(user: Option[User], tag: Tag, page: Int, itemsOnPage: Int): (Long, Seq[models.Entry]) = inTransaction {
-    val condition = (entry: Entry) =>
-      entry.openForAll === true or entry.author.id === (user map { _.id } getOrElse -1L) and (entry.tags.contains(tag.id) === true)
+  def getEntriesByTag(user: Option[models.User], tag: models.Tag, page: Int, itemsOnPage: Int): (Long, Seq[models.Entry]) = inTransaction {
+    implicit val impUser = user
     val size = from(entries)(entry =>
-      where(condition(entry)) compute count
+      where(condition(entry) and (entry.tags.contains(tag.id) === true)) compute count
     ).single.measures
     val xs = from(entries)(entry =>
-      where(condition(entry)) select entry
+      where(condition(entry) and (entry.tags.contains(tag.id) === true)) select entry
     ).page(page * itemsOnPage, itemsOnPage)
     (size, xs.toSeq map ModelConverter.get)
   }
 
-  def getEntriesBySearch(user: Option[User], query: String, page: Int, itemsOnPage: Int): (Long, Seq[models.Entry]) = inTransaction {
-    val condition = (entry: Entry) =>
-      entry.openForAll === true or entry.author.id === (user map { _.id} getOrElse -1L) and (entry.title like query)
+  def getEntriesBySearch(user: Option[models.User], query: String, page: Int, itemsOnPage: Int): (Long, Seq[models.Entry]) = inTransaction {
+    implicit val impUser = user
     val size = from(entries)(entry =>
-      where(condition(entry)) compute count
+      where(condition(entry) and (entry.title like query)) compute count
     ).single.measures
     val xs = from(entries)(entry =>
-      where(condition(entry)) select entry
+      where(condition(entry) and (entry.title like query)) select entry
     ).page(page * itemsOnPage, itemsOnPage)
     (size, xs.toSeq map ModelConverter.get)
   }
 
-  def getEntry(user: Option[User], id: Long): Option[models.Entry] = inTransaction {
+  def getEntry(user: Option[models.User], id: Long): Option[models.Entry] = inTransaction {
     entries.lookup(id) filter (entry => entry.openForAll || (user.isDefined && entry.author.id == user.get.id)) map ModelConverter.get
   }
 
