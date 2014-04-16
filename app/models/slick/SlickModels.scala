@@ -10,8 +10,8 @@ class User(ltag: lifted.Tag) extends Table[(Long, Long, String, String)](ltag, "
   def name = column[String]("name")
   def password = column[String]("password")
   def * = (id, version, name, password)
-  def nameUnique = index("name_idx", name, unique = true)
-  def namePasswordIdx = index("name_password_idx", (name, password), unique = true)
+  def nameUnique = index("user_name_idx", name, unique = true)
+  def namePasswordIdx = index("user_name_password_idx", (name, password), unique = true)
 }
 
 class Entry(ltag: lifted.Tag) extends Table[(Long, Long, Long, String, String, Date, Boolean)](ltag, "entries") {
@@ -23,7 +23,7 @@ class Entry(ltag: lifted.Tag) extends Table[(Long, Long, Long, String, String, D
   def date = column[Date]("date", O.Default(new Date((new java.util.Date).getTime)))
   def openForAll = column[Boolean]("open_for_all")
   def * = (id, version, author, title, content, date, openForAll)
-  def titleIdx = index("title_idx", title)
+  def titleIdx = index("entry_title_idx", title)
   def authorFk = foreignKey("entry_author_fk", author, SlickDao.users)(_.id)
 }
 
@@ -44,7 +44,7 @@ class Tag(ltag: lifted.Tag) extends Table[(Long, Long, String)](ltag, "tags") {
   def version = column[Long]("version", O.Default(0))
   def title = column[String]("title")
   def * = (id, version, title)
-  def titleIdx = index("title_idx", title)
+  def titleIdx = index("tag_title_idx", title)
 }
 
 class EntryTag(ltag: lifted.Tag) extends Table[(Long, Long)](ltag, "entries_tags") {
