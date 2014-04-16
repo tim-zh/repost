@@ -1,12 +1,13 @@
 package models.squeryl
 
 import org.squeryl.PrimitiveTypeMode._
-import org.squeryl.{Session, SessionFactory, Schema}
+import org.squeryl.{KeyedEntity, Session, SessionFactory, Schema}
 import java.util.Date
 import org.squeryl.adapters.H2Adapter
 import play.api.db.DB
 import play.api.Play.current
 import models.Dao
+import org.squeryl.dsl.CompositeKey2
 
 object SquerylDao extends Schema with Dao {
   val users = table[User]
@@ -17,9 +18,18 @@ object SquerylDao extends Schema with Dao {
   val userEntry = oneToManyRelation(users, entries).via((u, e) => u.id === e.authorId)
   val userComment = oneToManyRelation(users, comments).via((u, c) => u.id === c.authorId)
   val entryComment = oneToManyRelation(entries, comments).via((e, c) => e.id === c.entryId)
+  val entryTag = manyToManyRelation(entries, tags).via[EntryTagKey]((e, t, etk) => (e.id === etk.entryId, t.id === etk.tagId))
+
+  class EntryTagKey(val entryId: Long, val tagId: Long) extends KeyedEntity[CompositeKey2[Long, Long]] {
+    def id = compositeKey(entryId, tagId)
+  }
 
   def isEntryVisible(entry: Entry)(implicit user: Option[models.User]) =
     entry.openForAll === true or entry.authorId === (user map (_.id) getOrElse -1L)
+
+  def getPagesNumber(size: Long, itemsOnPage: Long): Long = {
+    Math.ceil(size / itemsOnPage.asInstanceOf[Double]).asInstanceOf[Long]
+  }
 
   on(users)(user => declare(
     user.id is (primaryKey, autoIncremented),
@@ -39,8 +49,12 @@ object SquerylDao extends Schema with Dao {
 
   on(tags)(tag => declare(
     tag.id is (primaryKey, autoIncremented),
-    tag.title is indexed
+    tag.title is (indexed, unique)
   ))
+
+  userEntry.foreignKeyDeclaration.constrainReference(onDelete cascade)
+  userComment.foreignKeyDeclaration.constrainReference(onDelete cascade)
+  entryComment.foreignKeyDeclaration.constrainReference(onDelete cascade)
 
   def init() {
     Class.forName("org.h2.Driver")
@@ -66,11 +80,11 @@ object SquerylDao extends Schema with Dao {
     tag2.id = 2
     val user1 = User("user1", "pass")
     user1.id = 1
-    val entry1 = Entry(1, "entry1", "content1<br/>bla1", new Date, true, Seq(tag1, tag2))
+    val entry1 = Entry(1, "entry1", "content1<br/>bla1", new Date, true)
     entry1.id = 1
-    val entry2 = Entry(1, "entry2", "content2<br/>bla2", new Date, false, Seq(tag1))
+    val entry2 = Entry(1, "entry2", "content2<br/>bla2", new Date, false)
     entry2.id = 2
-    val entry3 = Entry(1, "entry3", "content3<br/>bla3", new Date, true, Seq(tag2))
+    val entry3 = Entry(1, "entry3", "content3<br/>bla3", new Date, true)
     entry3.id = 3
     val comment1 = Comment(1, new Date, "comment1<br/>c1", 1)
     val comment2 = Comment(1, new Date, "comment2<br/>c2", 1)
@@ -91,6 +105,11 @@ object SquerylDao extends Schema with Dao {
     tags.insert(Seq(
       tag1,
       tag2))
+
+    entry1._tags.associate(tag1)
+    entry1._tags.associate(tag2)
+    entry2._tags.associate(tag1)
+    entry3._tags.associate(tag2)
   }
 
   def getUser(name: String, password: String): Option[models.User] = inTransaction {
@@ -111,7 +130,7 @@ object SquerylDao extends Schema with Dao {
     val xs = from(entries)(entry =>
       where(isEntryVisible(entry)) select entry
     ).page(page * itemsOnPage, itemsOnPage)
-    (size, xs.toSeq)
+    (getPagesNumber(size, itemsOnPage), xs.toList)
   }
 
   def getTag(title: String): Option[models.Tag] = inTransaction {
@@ -120,24 +139,24 @@ object SquerylDao extends Schema with Dao {
 
   def getEntriesByTag(user: Option[models.User], tag: models.Tag, page: Int, itemsOnPage: Int): (Long, Seq[models.Entry]) = inTransaction {
     implicit val impUser = user
-    val size = from(entries)(entry =>
-      where(isEntryVisible(entry) and (entry.tags.contains(tag.id) === true)) compute count
+    val size = from(entries, entryTag)((entry, et) =>
+      where(isEntryVisible(entry) and (entry.id === et.entryId) and (tag.id === et.tagId)) compute count
     ).single.measures
-    val xs = from(entries)(entry =>
-      where(isEntryVisible(entry) and (entry.tags.contains(tag.id) === true)) select entry
+    val xs = from(entries, entryTag)((entry, et) =>
+      where(isEntryVisible(entry) and (entry.id === et.entryId) and (tag.id === et.tagId)) select entry
     ).page(page * itemsOnPage, itemsOnPage)
-    (size, xs.toSeq)
+    (getPagesNumber(size, itemsOnPage), xs.toList)
   }
 
   def getEntriesBySearch(user: Option[models.User], query: String, page: Int, itemsOnPage: Int): (Long, Seq[models.Entry]) = inTransaction {
     implicit val impUser = user
     val size = from(entries)(entry =>
-      where(isEntryVisible(entry) and (entry.title like query)) compute count
+      where(isEntryVisible(entry) and (entry.title like "%" + query + "%")) compute count
     ).single.measures
     val xs = from(entries)(entry =>
-      where(isEntryVisible(entry) and (entry.title like query)) select entry
+      where(isEntryVisible(entry) and (entry.title like "%" + query + "%")) select entry
     ).page(page * itemsOnPage, itemsOnPage)
-    (size, xs.toSeq)
+    (getPagesNumber(size, itemsOnPage), xs.toList)
   }
 
   def getEntry(user: Option[models.User], id: Long): Option[models.Entry] = inTransaction {
