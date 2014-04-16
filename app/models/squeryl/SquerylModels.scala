@@ -15,8 +15,8 @@ case class User(name: String,
   lazy val _entries: OneToMany[Entry] = SquerylDao.userEntry.left(this)
   lazy val _comments: OneToMany[Comment] = SquerylDao.userComment.left(this)
 
-  lazy val entries: Iterable[models.Entry] = inTransaction(_entries.toList)
-  lazy val comments: Iterable[models.Comment] = inTransaction(_comments.toList)
+  def entries: Iterable[models.Entry] = inTransaction(_entries.toList)
+  def comments: Iterable[models.Comment] = inTransaction(_comments.toList)
 }
 
 case class Entry(authorId: Long,
@@ -28,9 +28,9 @@ case class Entry(authorId: Long,
   lazy val _comments: OneToMany[Comment] = SquerylDao.entryComment.left(this)
   lazy val _tags = SquerylDao.entryTag.left(this)
 
-  lazy val author: models.User = inTransaction(_author.single)
-  lazy val comments: Iterable[models.Comment] = inTransaction(_comments.toList)
-  lazy val tags: Iterable[models.Tag] = inTransaction(_tags.toList)
+  def author: models.User = inTransaction(_author.single)
+  def comments: Iterable[models.Comment] = inTransaction(_comments.toList)
+  def tags: Iterable[models.Tag] = inTransaction(_tags.toList)
 }
 
 case class Comment(authorId: Long,
@@ -40,8 +40,8 @@ case class Comment(authorId: Long,
   lazy val _author: ManyToOne[User] = SquerylDao.userComment.right(this)
   lazy val _entry: ManyToOne[Entry] = SquerylDao.entryComment.right(this)
 
-  lazy val author: models.User = inTransaction(_author.single)
-  lazy val entry: models.Entry = inTransaction(_entry.single)
+  def author: models.User = inTransaction(_author.single)
+  def entry: models.Entry = inTransaction(_entry.single)
 }
 
 case class Tag(title: String) extends KeyedEntity[Long] with Entity with models.Tag {
