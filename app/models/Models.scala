@@ -3,40 +3,50 @@ package models
 import java.util.Date
 
 sealed trait Entity {
-  var id: Long = _
-  var version: Long = _
+  def id: Long
+  def version: Long
 }
 
-case class User(name: String,
-                password: String,
-                var entries: Seq[Entry],
-                var comments: Seq[Comment]) extends Entity {
+trait User extends Entity {
+  def name: String
+  def password: String
+  def entries: Iterable[Entry]
+  def comments: Iterable[Comment]
+
   override def toString: String = name
 }
 
-case class Entry(author: User,
-                 title: String,
-                 content: String,
-                 date: Date,
-                 openForAll: Boolean,
-                 tags: Seq[Tag],
-                 var comments: Seq[Comment]) extends Entity {
+trait Entry extends Entity {
+  def author: User
+  def title: String
+  def content: String
+  def date: Date
+  def openForAll: Boolean
+  def tags: Iterable[Tag]
+  def comments: Iterable[Comment]
+
   override def toString: String = title
 }
 
-case class Comment(author: User,
-                   date: Date,
-                   content: String,
-                   entry: Entry) extends Entity
+trait Comment extends Entity {
+  def author: User
+  def date: Date
+  def content: String
+  def entry: Entry
+}
 
-case class Tag(title: String) extends Entity {
+trait Tag extends Entity {
+  def title: String
+
   override def toString: String = title
 }
 
-case class Filter(title: String,
-                  tags: Seq[Tag],
-                  authors: Seq[User],
-                  startDate: Option[Date],
-                  endDate: Option[Date]) extends Entity {
+trait Filter extends Entity {
+  def title: String
+  def tags: Iterable[Tag]
+  def authors: Iterable[User]
+  def startDate: Option[Date]
+  def endDate: Option[Date]
+
   override def toString: String = title
 }

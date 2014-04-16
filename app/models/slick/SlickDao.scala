@@ -67,23 +67,13 @@ object SlickDao extends Dao {
 
   def getUser(name: String, password: String): Option[models.User] = {
     db withDynTransaction {
-      users.filter(u => u.name === name && u.password === password).firstOption map { t =>
-        val x = models.User(t._3, t._4, Nil, Nil)
-        x.id = t._1
-        x.version = t._2
-        x
-      }
+      users.filter(u => u.name === name && u.password === password).firstOption map ModelConverter.getUser
     }
   }
 
   def getUser(id: Long): Option[models.User] = {
     db withDynTransaction {
-      users.filter(_.id === id).firstOption map { t =>
-        val x = models.User(t._3, t._4, Nil, Nil)
-        x.id = t._1
-        x.version = t._2
-        x
-      }
+      users.filter(_.id === id).firstOption map ModelConverter.getUser
     }
   }
 
@@ -92,35 +82,14 @@ object SlickDao extends Dao {
     db withDynTransaction {
       implicit val impUser = user
       val pagesNumber = Math.ceil(entries.filter(isEntryVisible).length.run / itemsOnPage.asInstanceOf[Double]).asInstanceOf[Long]
-      val xs = entries.filter(isEntryVisible).drop(page * itemsOnPage).take(itemsOnPage).list map { t =>
-        val x = models.Entry(getUser(t._3).get, t._4, t._5, t._6, t._7, getTagsByEntry(t._1), Nil)
-        x.id = t._1
-        x.version = t._2
-        x
-      }
+      val xs = entries.filter(isEntryVisible).drop(page * itemsOnPage).take(itemsOnPage).list map ModelConverter.getEntry
       (pagesNumber, xs)
     }
   }
 
   def getTag(title: String): Option[models.Tag] = {
     db withDynTransaction {
-      tags.filter(_.title === title).firstOption map { t =>
-        val x = models.Tag(t._3)
-        x.id = t._1
-        x.version = t._2
-        x
-      }
-    }
-  }
-
-  def getFilter(title: String): Option[models.Filter] = {
-    db withDynTransaction {
-      filters.filter(_.title === title).firstOption map { t =>
-        val x = models.Filter(t._3, getTagsByFilter(t._1), Nil, t._4, t._5)
-        x.id = t._1
-        x.version = t._2
-        x
-      }
+      tags.filter(_.title === title).firstOption map ModelConverter.getTag
     }
   }
 
@@ -134,12 +103,7 @@ object SlickDao extends Dao {
         if etr.tag === tag.id && entry.id === etr.entry && isEntryVisible(entry)
       } yield entry
       val pagesNumber = Math.ceil(q.length.run / itemsOnPage.asInstanceOf[Double]).asInstanceOf[Long]
-      val xs = q.drop(page * itemsOnPage).take(itemsOnPage).list map { t =>
-        val x = models.Entry(getUser(t._3).get, t._4, t._5, t._6, t._7, getTagsByEntry(t._1), Nil)
-        x.id = t._1
-        x.version = t._2
-        x
-      }
+      val xs = q.drop(page * itemsOnPage).take(itemsOnPage).list map ModelConverter.getEntry
       (pagesNumber, xs)
     }
   }
@@ -167,12 +131,7 @@ object SlickDao extends Dao {
           (LiteralColumn(!filter.endDate.isDefined) || (entry.date <= filter.endDate.get.asInstanceOf[Date]))
       } yield entry
       val pagesNumber = Math.ceil(q.length.run / itemsOnPage.asInstanceOf[Double]).asInstanceOf[Long]
-      val xs = q.drop(page * itemsOnPage).take(itemsOnPage).list map { t =>
-        val x = models.Entry(getUser(t._3).get, t._4, t._5, t._6, t._7, getTagsByEntry(t._1), Nil)
-        x.id = t._1
-        x.version = t._2
-        x
-      }
+      val xs = q.drop(page * itemsOnPage).take(itemsOnPage).list map ModelConverter.getEntry
       (pagesNumber, xs)
     }
   }
@@ -183,12 +142,7 @@ object SlickDao extends Dao {
       implicit val impUser = user
       val q = (e: Entry) => e.title.like("%" + query + "%") && isEntryVisible(e)
       val pagesNumber = Math.ceil(entries.filter(q).length.run / itemsOnPage.asInstanceOf[Double]).asInstanceOf[Long]
-      val xs = entries.filter(q).drop(page * itemsOnPage).take(itemsOnPage).list map { t =>
-        val x = models.Entry(getUser(t._3).get, t._4, t._5, t._6, t._7, getTagsByEntry(t._1), Nil)
-        x.id = t._1
-        x.version = t._2
-        x
-      }
+      val xs = entries.filter(q).drop(page * itemsOnPage).take(itemsOnPage).list map ModelConverter.getEntry
       (pagesNumber, xs)
     }
   }
@@ -196,12 +150,7 @@ object SlickDao extends Dao {
   def getEntry(user: Option[models.User], id: Long): Option[models.Entry] = {
     db withDynTransaction {
       implicit val impUser = user
-      entries.filter(e => e.id === id && isEntryVisible(e)).firstOption map { t =>
-        val x = models.Entry(getUser(t._3).get, t._4, t._5, t._6, t._7, getTagsByEntry(t._1), getComments(t._1))
-        x.id = t._1
-        x.version = t._2
-        x
-      }
+      entries.filter(e => e.id === id && isEntryVisible(e)).firstOption map ModelConverter.getEntry
     }
   }
 
@@ -212,12 +161,7 @@ object SlickDao extends Dao {
         etr <- entryTagRelation
         if etr.entry === entryId && etr.tag === tag.id
       } yield tag
-      q.list map { t =>
-        val x = models.Tag(t._3)
-        x.id = t._1
-        x.version = t._2
-        x
-      }
+      q.list map ModelConverter.getTag
     }
   }
 
@@ -228,23 +172,37 @@ object SlickDao extends Dao {
         ftr <- filterTagRelation
         if ftr.filter === filterId && ftr.tag === tag.id
       } yield tag
-      q.list map { t =>
-        val x = models.Tag(t._3)
-        x.id = t._1
-        x.version = t._2
-        x
-      }
+      q.list map ModelConverter.getTag
     }
   }
 
   def getComments(entryId: Long): Seq[models.Comment] = {
     db withDynTransaction {
-      comments.filter(_.id === entryId).list map { t =>
-        val x = models.Comment(getUser(t._3).get, t._4, t._5, null)
-        x.id = t._1
-        x.version = t._2
-        x
-      }
+      comments.filter(_.id === entryId).list map ModelConverter.getComment
+    }
+  }
+
+  def getEntriesByUser(userId: Long): Seq[models.Entry] = {
+    db withDynTransaction {
+      entries.filter(_.author === userId).list map ModelConverter.getEntry
+    }
+  }
+
+  def getCommentsByUser(userId: Long): Seq[models.Comment] = {
+    db withDynTransaction {
+      comments.filter(_.author === userId).list map ModelConverter.getComment
+    }
+  }
+
+  def getCommentsByEntry(entryId: Long): Seq[models.Comment] = {
+    db withDynTransaction {
+      comments.filter(_.entry === entryId).list map ModelConverter.getComment
+    }
+  }
+
+  def getEntry(id: Long): Option[models.Entry] = {
+    db withDynTransaction {
+      entries.filter(_.id === id).firstOption map ModelConverter.getEntry
     }
   }
 }

@@ -4,9 +4,9 @@ import org.squeryl.PrimitiveTypeMode._
 import org.squeryl.{Session, SessionFactory, Schema}
 import java.util.Date
 import org.squeryl.adapters.H2Adapter
-import play.api.db._
+import play.api.db.DB
 import play.api.Play.current
-import models.{TestDao, Dao}
+import models.Dao
 
 object SquerylDao extends Schema with Dao {
   val users = table[User]
@@ -15,8 +15,12 @@ object SquerylDao extends Schema with Dao {
   val tags = table[Tag]
   val filters = table[Filter]
 
-  def condition(entry: Entry)(implicit user: Option[models.User]) =
-    entry.openForAll === true or entry.author.id === (user map (_.id) getOrElse -1L)
+  val userEntry = oneToManyRelation(users, entries).via((u, e) => u.id === e.authorId)
+  val userComment = oneToManyRelation(users, comments).via((u, c) => u.id === c.authorId)
+  val entryComment = oneToManyRelation(entries, comments).via((e, c) => e.id === c.entryId)
+
+  def isEntryVisible(entry: Entry)(implicit user: Option[models.User]) =
+    entry.openForAll === true or entry.authorId === (user map (_.id) getOrElse -1L)
 
   on(users)(user => declare(
     user.id is (primaryKey, autoIncremented),
@@ -61,96 +65,87 @@ object SquerylDao extends Schema with Dao {
   }
 
   def populate() {
+    val tag1 = Tag("tag1")
+    tag1.id = 1
+    val tag2 = Tag("tag2")
+    tag2.id = 2
+    val user1 = User("user1", "pass")
+    user1.id = 1
+    val entry1 = Entry(1, "entry1", "content1<br/>bla1", new Date, true, Seq(tag1, tag2))
+    entry1.id = 1
+    val entry2 = Entry(1, "entry2", "content2<br/>bla2", new Date, false, Seq(tag1))
+    entry2.id = 2
+    val entry3 = Entry(1, "entry3", "content3<br/>bla3", new Date, true, Seq(tag2))
+    entry3.id = 3
+    val comment1 = Comment(1, new Date, "comment1<br/>c1", 1)
+    val comment2 = Comment(1, new Date, "comment2<br/>c2", 1)
+    val comment3 = Comment(1, new Date, "comment3<br/>c3", 1)
+    val comment4 = Comment(1, new Date, "comment4<br/>c4", 2)
+
     users.insert(Seq(
-      ModelConverter.get(TestDao.user1)))
+      user1))
     entries.insert(Seq(
-      ModelConverter.get(TestDao.entry1),
-      ModelConverter.get(TestDao.entry2),
-      ModelConverter.get(TestDao.entry3)))
+      entry1,
+      entry2,
+      entry3))
     comments.insert(Seq(
-      ModelConverter.get(TestDao.comment1),
-      ModelConverter.get(TestDao.comment2),
-      ModelConverter.get(TestDao.comment3),
-      ModelConverter.get(TestDao.comment4)))
+      comment1,
+      comment2,
+      comment3,
+      comment4))
     tags.insert(Seq(
-      ModelConverter.get(TestDao.tag1),
-      ModelConverter.get(TestDao.tag2)))
+      tag1,
+      tag2))
   }
 
   def getUser(name: String, password: String): Option[models.User] = inTransaction {
     from(users)(user =>
       where(user.name === name) select user
-    ).headOption map ModelConverter.get
+    ).headOption
   }
 
   def getUser(id: Long): Option[models.User] = inTransaction {
-    users.lookup(id) map ModelConverter.get
+    users.lookup(id)
   }
 
   def getEntries(user: Option[models.User], page: Int, itemsOnPage: Int): (Long, Seq[models.Entry]) = inTransaction {
     implicit val impUser = user
     val size = from(entries)(entry =>
-      where(condition(entry)) compute count
+      where(isEntryVisible(entry)) compute count
     ).single.measures
     val xs = from(entries)(entry =>
-      where(condition(entry)) select entry
+      where(isEntryVisible(entry)) select entry
     ).page(page * itemsOnPage, itemsOnPage)
-    (size, xs.toSeq map ModelConverter.get)
+    (size, xs.toSeq)
   }
 
   def getTag(title: String): Option[models.Tag] = inTransaction {
-    tags.where(_.title === title).headOption map ModelConverter.get
+    tags.where(_.title === title).headOption
   }
 
   def getEntriesByTag(user: Option[models.User], tag: models.Tag, page: Int, itemsOnPage: Int): (Long, Seq[models.Entry]) = inTransaction {
     implicit val impUser = user
     val size = from(entries)(entry =>
-      where(condition(entry) and (entry.tags.contains(tag.id) === true)) compute count
+      where(isEntryVisible(entry) and (entry.tags.contains(tag.id) === true)) compute count
     ).single.measures
     val xs = from(entries)(entry =>
-      where(condition(entry) and (entry.tags.contains(tag.id) === true)) select entry
+      where(isEntryVisible(entry) and (entry.tags.contains(tag.id) === true)) select entry
     ).page(page * itemsOnPage, itemsOnPage)
-    (size, xs.toSeq map ModelConverter.get)
+    (size, xs.toSeq)
   }
 
   def getEntriesBySearch(user: Option[models.User], query: String, page: Int, itemsOnPage: Int): (Long, Seq[models.Entry]) = inTransaction {
     implicit val impUser = user
     val size = from(entries)(entry =>
-      where(condition(entry) and (entry.title like query)) compute count
+      where(isEntryVisible(entry) and (entry.title like query)) compute count
     ).single.measures
     val xs = from(entries)(entry =>
-      where(condition(entry) and (entry.title like query)) select entry
+      where(isEntryVisible(entry) and (entry.title like query)) select entry
     ).page(page * itemsOnPage, itemsOnPage)
-    (size, xs.toSeq map ModelConverter.get)
+    (size, xs.toSeq)
   }
 
   def getEntry(user: Option[models.User], id: Long): Option[models.Entry] = inTransaction {
-    entries.lookup(id) filter (entry => entry.openForAll || (user.isDefined && entry.author.id == user.get.id)) map ModelConverter.get
-  }
-
-  object ModelConverter {
-    def get(user: models.User): User =
-      User(user.name, user.password, user.entries map get, user.comments map get)
-
-    def get(entry: models.Entry): Entry =
-      Entry(get(entry.author), entry.title, entry.content, entry.date, entry.openForAll, entry.tags map get, entry.comments map get)
-
-    def get(comment: models.Comment): Comment =
-      Comment(get(comment.author), comment.date, comment.content, get(comment.entry))
-
-    def get(tag: models.Tag): Tag =
-      Tag(tag.title)
-
-    def get(user: User): models.User =
-      models.User(user.name, user.password, user.entries map get, user.comments map get)
-
-    def get(entry: Entry): models.Entry =
-      models.Entry(get(entry.author), entry.title, entry.content, entry.date, entry.openForAll, entry.tags map get, entry.comments map get)
-
-    def get(comment: Comment): models.Comment =
-      models.Comment(get(comment.author), comment.date, comment.content, get(comment.entry))
-
-    def get(tag: Tag): models.Tag =
-      models.Tag(tag.title)
+    entries.lookup(id) filter (entry => entry.openForAll || (user.isDefined && entry.authorId == user.get.id))
   }
 }
