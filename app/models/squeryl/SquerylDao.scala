@@ -13,7 +13,6 @@ object SquerylDao extends Schema with Dao {
   val entries = table[Entry]
   val comments = table[Comment]
   val tags = table[Tag]
-  val filters = table[Filter]
 
   val userEntry = oneToManyRelation(users, entries).via((u, e) => u.id === e.authorId)
   val userComment = oneToManyRelation(users, comments).via((u, c) => u.id === c.authorId)
@@ -41,10 +40,6 @@ object SquerylDao extends Schema with Dao {
   on(tags)(tag => declare(
     tag.id is (primaryKey, autoIncremented),
     tag.title is indexed
-  ))
-
-  on(filters)(filter => declare(
-    filter.id is (primaryKey, autoIncremented)
   ))
 
   def init() {

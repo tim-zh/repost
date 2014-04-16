@@ -31,7 +31,7 @@
 			@if(user.isDefined) {
 				<div class="btn-group btn-group-sm navbar-form">
 					<div class="btn-group btn-group-sm">
-						<button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown">
+						<button type="button" class="btn btn-info btn-sm dropdown-toggle" data-toggle="dropdown">
 							@user.get.name
 							<span class="caret"></span>
 						</button>
@@ -42,7 +42,6 @@
 							</form></a></li>
 						</ul>
 					</div>
-					<button type="button" class="btn btn-default">all filters</button>
 				</div>
 			} else {
 				<form method="post" action="/auth" class="navbar-form navbar-left" role="form">

@@ -5,20 +5,15 @@ import Database.dynamicSession
 import play.api.db.DB
 import play.api.Play.current
 import models.Dao
-import java.sql.Date
 
 object SlickDao extends Dao {
   val users = TableQuery[User]
   val entries = TableQuery[Entry]
   val comments = TableQuery[Comment]
   val tags = TableQuery[Tag]
-  val filters = TableQuery[Filter]
   val entryTagRelation = TableQuery[EntryTag]
-  val filterTagRelation = TableQuery[FilterTag]
-  val filterUserRelation = TableQuery[FilterUser]
   private val db = Database.forDataSource(DB.getDataSource("default"))
-  private val ddl = users.ddl ++ entries.ddl ++ comments.ddl ++ tags.ddl ++ filters.ddl ++
-    entryTagRelation.ddl ++ filterUserRelation.ddl
+  private val ddl = users.ddl ++ entries.ddl ++ comments.ddl ++ tags.ddl ++ entryTagRelation.ddl
   private def isEntryVisible(e: Entry)(implicit user: Option[models.User]) = e.openForAll || (user match {
     case Some(x) => e.author === x.id
     case None => false
@@ -44,18 +39,11 @@ object SlickDao extends Dao {
       tags map (x => (x.title)) ++= Seq(
         ("tag1"),
         ("tag2"))
-      filters map (x => (x.title)) ++= Seq(
-        ("filter1"),
-        ("filter2"))
       entryTagRelation ++= Seq(
         (1, 1),
         (1, 2),
         (2, 1),
         (3, 1))
-      filterTagRelation ++= Seq(
-        (1, 1),
-        (1, 2),
-        (2, 1))
     }
   }
 
@@ -108,34 +96,6 @@ object SlickDao extends Dao {
     }
   }
 
-  def getEntriesByFilter(user: Option[models.User], filter: models.Filter, page: Int, itemsOnPage: Int): (Long, Seq[models.Entry]) = {
-    require(itemsOnPage != 0)
-    db withDynTransaction {
-      implicit val impUser = user
-      val fauthors = (for {
-        fuser <- users
-        fur <- filterUserRelation
-        if fur.user === fuser.id && fur.filter === filter.id
-      } yield fuser).map(_.id).list
-      val ftags = (for {
-        tag <- tags
-        ftr <- filterTagRelation
-        if ftr.tag === tag.id && ftr.filter === filter.id
-      } yield tag).map(_.id).list
-      val q = for {
-        etr <- entryTagRelation
-        entry <- entries
-        if (LiteralColumn(fauthors.isEmpty) || (entry.author inSet fauthors)) &&
-          (LiteralColumn(ftags.isEmpty) || (etr.entry === entry.id && (etr.tag inSet ftags))) &&
-          (LiteralColumn(!filter.startDate.isDefined) || (entry.date >= filter.startDate.get.asInstanceOf[Date])) &&
-          (LiteralColumn(!filter.endDate.isDefined) || (entry.date <= filter.endDate.get.asInstanceOf[Date]))
-      } yield entry
-      val pagesNumber = Math.ceil(q.length.run / itemsOnPage.asInstanceOf[Double]).asInstanceOf[Long]
-      val xs = q.drop(page * itemsOnPage).take(itemsOnPage).list map ModelConverter.getEntry
-      (pagesNumber, xs)
-    }
-  }
-
   def getEntriesBySearch(user: Option[models.User], query: String, page: Int, itemsOnPage: Int): (Long, Seq[models.Entry]) = {
     require(itemsOnPage != 0)
     db withDynTransaction {
@@ -160,17 +120,6 @@ object SlickDao extends Dao {
         tag <- tags
         etr <- entryTagRelation
         if etr.entry === entryId && etr.tag === tag.id
-      } yield tag
-      q.list map ModelConverter.getTag
-    }
-  }
-
-  def getTagsByFilter(filterId: Long): Seq[models.Tag] = {
-    db withDynTransaction {
-      val q = for {
-        tag <- tags
-        ftr <- filterTagRelation
-        if ftr.filter === filterId && ftr.tag === tag.id
       } yield tag
       q.list map ModelConverter.getTag
     }

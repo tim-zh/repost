@@ -29,9 +29,3 @@ case class Comment(author: models.User,
                    entry: models.Entry) extends Entity with models.Comment
 
 case class Tag(title: String) extends Entity with models.Tag
-
-case class Filter(title: String,
-                  tags: Seq[models.Tag],
-                  authors: Seq[models.User],
-                  startDate: Option[Date],
-                  endDate: Option[Date]) extends Entity with models.Filter

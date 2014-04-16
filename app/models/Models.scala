@@ -40,13 +40,3 @@ trait Tag extends Entity {
 
   override def toString: String = title
 }
-
-trait Filter extends Entity {
-  def title: String
-  def tags: Iterable[Tag]
-  def authors: Iterable[User]
-  def startDate: Option[Date]
-  def endDate: Option[Date]
-
-  override def toString: String = title
-}

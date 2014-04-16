@@ -47,38 +47,12 @@ class Tag(ltag: lifted.Tag) extends Table[(Long, Long, String)](ltag, "tags") {
   def titleIdx = index("title_idx", title)
 }
 
-class Filter(ltag: lifted.Tag) extends Table[(Long, Long, String, Option[Date], Option[Date])](ltag, "filters") {
-  def id = column[Long]("id", O.PrimaryKey, O.AutoInc)
-  def version = column[Long]("version", O.Default(0))
-  def title = column[String]("title")
-  def startDate = column[Option[Date]]("start_date")
-  def endDate = column[Option[Date]]("end_date")
-  def * = (id, version, title, startDate, endDate)
-  def titleIdx = index("title_idx", title)
-}
-
 class EntryTag(ltag: lifted.Tag) extends Table[(Long, Long)](ltag, "entries_tags") {
   def entry = column[Long]("entry_id")
   def tag = column[Long]("tag_id")
   def * = (entry, tag)
   def entryFk = foreignKey("entry_tag_entry_fk", entry, SlickDao.entries)(_.id)
   def tagFk = foreignKey("entry_tag_tag_fk", tag, SlickDao.tags)(_.id)
-}
-
-class FilterTag(ltag: lifted.Tag) extends Table[(Long, Long)](ltag, "filters_tags") {
-  def filter = column[Long]("filter_id")
-  def tag = column[Long]("tag_id")
-  def * = (filter, tag)
-  def filterFk = foreignKey("filter_tag_entry_fk", filter, SlickDao.filters)(_.id)
-  def tagFk = foreignKey("filter_tag_tag_fk", tag, SlickDao.tags)(_.id)
-}
-
-class FilterUser(ltag: lifted.Tag) extends Table[(Long, Long)](ltag, "filters_users") {
-  def filter = column[Long]("filter_id")
-  def user = column[Long]("user_id")
-  def * = (filter, user)
-  def filterFk = foreignKey("filter_user_entry_fk", filter, SlickDao.filters)(_.id)
-  def userFk = foreignKey("filter_user_user_fk", user, SlickDao.users)(_.id)
 }
 
 sealed abstract class Entity {
@@ -111,12 +85,6 @@ case class SlickComment(authorId: Long,
 }
 
 case class SlickTag(title: String) extends Entity with models.Tag
-
-case class SlickFilter(title: String,
-                       tags: Seq[SlickTag],
-                       authors: Seq[SlickUser],
-                       startDate: Option[Date],
-                       endDate: Option[Date]) extends Entity with models.Filter
 
 object ModelConverter {
   def getUser(t: (Long, Long, String, String)): SlickUser = {

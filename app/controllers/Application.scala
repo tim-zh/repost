@@ -1,20 +1,19 @@
 package controllers
 
 import play.api.mvc._
-import models.{Dao}
+import models.Dao
 import play.api.data._
 import play.api.data.Forms._
-import models.squeryl.SquerylDao
+import models.test.TestDao
 
 object Application extends Controller {
 
-  implicit val dao = SquerylDao
+  implicit val dao = TestDao
   val itemsOnPage = 2
 
   case class LoginData(name: String, password: String)
 
   def index(page: Int) = Action { implicit req =>
-    dao.init()
     val user = getUserFromSession
     val (pagesNumber, entries) = dao.getEntries(user, page, itemsOnPage)
     Ok(views.html.entries(user, page, pagesNumber, entries))
