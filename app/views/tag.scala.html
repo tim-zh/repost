@@ -1,5 +1,0 @@
-@(user: Option[User], currentPage: Int, pagesNumber: Long, entries: Seq[Entry], tag: Tag)
-@wrapper(user, tag.title) {
-	@entryList(entries)
-	@navigation(currentPage, pagesNumber, s"/tag/${tag.title}")
-}
