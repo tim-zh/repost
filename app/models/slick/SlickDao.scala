@@ -163,9 +163,8 @@ object SlickDao extends Dao {
 
   def addUser(name: String, password: String): models.User = {
     db withDynTransaction {
-      val user = SlickUser(name, password)
       users map (x => (x.name, x.password)) += (name, password)
-      user
     }
+    getUser(name).get
   }
 }
