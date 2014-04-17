@@ -31,6 +31,8 @@ object TestDao extends Dao {
 
   def getUser(id: Long): Option[User] = if (id == user1.id) Some(user1) else None
 
+  def getUser(name: String): Option[models.User] = if (name == user1.name) Some(user1) else None
+
   def getEntries(user: Option[models.User], page: Int, itemsOnPage: Int): (Long, Seq[Entry]) = {
     require(itemsOnPage != 0)
     var list = Seq(entry1, entry2, entry3)
@@ -58,4 +60,6 @@ object TestDao extends Dao {
   }
 
   def getEntry(user: Option[models.User], id: Long): Option[Entry] = Seq(entry1, entry2, entry3) find { _.id == id }
+
+  def addUser(name: String, password: String): models.User = user1
 }

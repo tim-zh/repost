@@ -1,0 +1,19 @@
+@(errors: Seq[FormError] = Nil, badData: Map[String, String] = Map.empty)
+@input(labelText: String, inputName: String, inputType: String = "text", placeholder: String = "") = {
+	<div class="form-group@(if (errors.exists(_.key == inputName)) " has-error")">
+		<label for="@inputName">@labelText</label>
+		<input type="@inputType" placeholder="@placeholder" class="form-control" name="@inputName" id="@inputName"
+			@{if (badData.contains(inputName)) s"value=${badData(inputName)}"}>
+		@for(error <- errors.filter(_.key == inputName)) {
+			<span class="help-block">@(error.message). </span>
+		}
+	</div>
+}
+@wrapper(None) {
+	<form method="post" action="/register" role="form">
+		@input("name", "name", "text", "name")
+		@input("password", "pass", "password", "password")
+		@input("retype password", "pass2", "password", "password")
+		<button type="submit" class="btn btn-default btn-sm">register</button>
+	</form>
+}

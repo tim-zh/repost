@@ -1,5 +1,7 @@
 POST        /auth                    controllers.Application.auth()
 POST        /logout                  controllers.Application.logout()
+GET         /register                controllers.Application.register()
+POST        /register                controllers.Application.register()
 
 GET         /$page<\d+>              controllers.Application.index(page: Int)
 POST        /$page<\d+>              controllers.Application.index(page: Int)

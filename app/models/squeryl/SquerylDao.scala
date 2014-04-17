@@ -114,12 +114,18 @@ object SquerylDao extends Schema with Dao {
 
   def getUser(name: String, password: String): Option[models.User] = inTransaction {
     from(users)(user =>
-      where(user.name === name) select user
+      where(user.name === name and user.password === password) select user
     ).headOption
   }
 
   def getUser(id: Long): Option[models.User] = inTransaction {
     users.lookup(id)
+  }
+
+  def getUser(name: String): Option[models.User] = inTransaction {
+    from(users)(user =>
+      where(user.name === name) select user
+    ).headOption
   }
 
   def getEntries(user: Option[models.User], page: Int, itemsOnPage: Int): (Long, Seq[models.Entry]) = inTransaction {
@@ -161,5 +167,9 @@ object SquerylDao extends Schema with Dao {
 
   def getEntry(user: Option[models.User], id: Long): Option[models.Entry] = inTransaction {
     entries.lookup(id) filter (entry => entry.openForAll || (user.isDefined && entry.authorId == user.get.id))
+  }
+
+  def addUser(name: String, password: String): models.User = inTransaction {
+    users.insert(User(name, password))
   }
 }

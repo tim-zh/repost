@@ -12,6 +12,7 @@ object Application extends Controller {
   val itemsOnPage = 2
 
   case class LoginData(name: String, password: String)
+  case class RegisterData(name: String, password: String, password2: String)
 
   def index(page: Int) = Action { implicit req =>
     dao.init()
@@ -41,6 +42,23 @@ object Application extends Controller {
       Redirect(routes.Application.index(0)).withNewSession
     else
       Redirect(routes.Application.index(0))
+  }
+
+  def register() = Action { implicit req =>
+    val registerForm = Form(mapping("name" -> nonEmptyText, "pass" -> nonEmptyText, "pass2" -> nonEmptyText)
+      (RegisterData.apply)(RegisterData.unapply))
+    registerForm.bindFromRequest.fold(
+      badForm => Ok(views.html.register(if (req.method == "POST") badForm.errors else Nil, badForm.data)),
+      registerData => {
+        val errors = validateRegisterData(registerData)
+        if (errors.isEmpty) {
+          val newUser = dao.addUser(registerData.name, registerData.password)
+          Redirect(routes.Application.index(0)).withSession(req.session +("user", newUser.id + ""))
+        }
+        else
+          Ok(views.html.register(errors))
+      }
+    )
   }
 
   def search(page: Int) = Action { implicit req =>
@@ -86,4 +104,12 @@ object Application extends Controller {
     dao.getUser(userId)
   }
 
+  private def validateRegisterData(registerData: RegisterData): Seq[FormError] = {
+    var errors = List[FormError]()
+    if (dao.getUser(registerData.name).isDefined)
+      errors = FormError("name", "user already exists") :: errors
+    if (registerData.password != registerData.password2)
+      errors = FormError("pass2", "password mismatch") :: errors
+    errors
+  }
 }

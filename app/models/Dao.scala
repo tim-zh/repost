@@ -5,6 +5,8 @@ trait Dao {
 
   def getUser(id: Long): Option[User]
 
+  def getUser(name: String): Option[User]
+
   def getEntries(user: Option[User], page: Int, itemsOnPage: Int): (Long, Seq[Entry])
 
   def getTag(title: String): Option[Tag]
@@ -14,4 +16,6 @@ trait Dao {
   def getEntriesBySearch(user: Option[User], query: String, page: Int, itemsOnPage: Int): (Long, Seq[Entry])
 
   def getEntry(user: Option[User], id: Long): Option[Entry]
+
+  def addUser(name: String, password: String): User
 }

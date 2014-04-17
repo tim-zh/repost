@@ -65,6 +65,12 @@ object SlickDao extends Dao {
     }
   }
 
+  def getUser(name: String): Option[models.User] = {
+    db withDynTransaction {
+      users.filter(_.name === name).firstOption map ModelConverter.getUser
+    }
+  }
+
   def getEntries(user: Option[models.User], page: Int, itemsOnPage: Int): (Long, Seq[models.Entry]) = {
     require(itemsOnPage != 0)
     db withDynTransaction {
@@ -152,6 +158,14 @@ object SlickDao extends Dao {
   def getEntry(id: Long): Option[models.Entry] = {
     db withDynTransaction {
       entries.filter(_.id === id).firstOption map ModelConverter.getEntry
+    }
+  }
+
+  def addUser(name: String, password: String): models.User = {
+    db withDynTransaction {
+      val user = SlickUser(name, password)
+      users map (x => (x.name, x.password)) += (name, password)
+      user
     }
   }
 }
