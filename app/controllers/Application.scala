@@ -12,7 +12,23 @@ object Application extends Controller {
   val itemsOnPage = 2
 
   case class LoginData(name: String, password: String)
-  case class RegisterData(name: String, password: String, password2: String)
+  case class RegisterData(name: String, password: String, password2: String) {
+    def this(badData: Map[String, String]) =
+      this(badData.get("name").getOrElse(""), badData.get("pass").getOrElse(""), badData.get("pass2").getOrElse(""))
+
+    def validate: Seq[FormError] = {
+      var errors = List[FormError]()
+      if (dao.getUser(name).isDefined)
+        errors = FormError("name", "user already exists") :: errors
+      if (password != password2)
+        errors = FormError("pass2", "password mismatch") :: errors
+      errors
+    }
+
+    def toMap: Map[String, String] = {
+      Map("name" -> name, "pass" -> password, "pass2" -> password2)
+    }
+  }
   case class EntryData(title: String, tags: String, openForAll: Boolean, content: String)
 
   def index(page: Int) = Action { implicit req =>
@@ -49,15 +65,16 @@ object Application extends Controller {
     val registerForm = Form(mapping("name" -> nonEmptyText, "pass" -> nonEmptyText, "pass2" -> nonEmptyText)
       (RegisterData.apply)(RegisterData.unapply))
     registerForm.bindFromRequest.fold(
-      badForm => Ok(views.html.register(if (req.method == "POST") badForm.errors else Nil, badForm.data)),
+      badForm => Ok(views.html.register(if (req.method == "POST")
+        badForm.errors ++ new RegisterData(badForm.data).validate else Nil, badForm.data)),
       registerData => {
-        val errors = validateRegisterData(registerData)
+        val errors = registerData.validate
         if (errors.isEmpty) {
           val newUser = dao.addUser(registerData.name, registerData.password)
           Redirect(routes.Application.index(0)).withSession(req.session +("user", newUser.id + ""))
         }
         else
-          Ok(views.html.register(errors))
+          Ok(views.html.register(errors, registerData.toMap))
       }
     )
   }
@@ -123,14 +140,5 @@ object Application extends Controller {
   private def getUserFromSession(implicit dao: Dao, req: Request[AnyContent]) = {
     val userId = Integer.parseInt(req.session.get("user").getOrElse("-1"))
     dao.getUser(userId)
-  }
-
-  private def validateRegisterData(registerData: RegisterData): Seq[FormError] = {
-    var errors = List[FormError]()
-    if (dao.getUser(registerData.name).isDefined)
-      errors = FormError("name", "user already exists") :: errors
-    if (registerData.password != registerData.password2)
-      errors = FormError("pass2", "password mismatch") :: errors
-    errors
   }
 }
