@@ -1,0 +1,28 @@
+@(user: Option[User], errors: Seq[FormError] = Nil, badData: Map[String, String] = Map.empty)
+@wrapper(user) {
+	<br/>
+	<form method="post" action="/entry/save" class="form-horizontal" role="form">
+		@renderInput(errors, badData, "title", "title", "text", "title")
+		@renderInput(errors, badData, "tags", "tags", "text")
+		<div class="form-group">
+			<label class="col-xs-offset-2 col-xs-4" for="openForAll">
+				<input type="checkbox" name="openForAll" id="openForAll">
+				open for all
+			</label>
+		</div>
+		<div class="form-group@(if (errors.exists(_.key == "content")) " has-error")">
+			<label for="content" class="col-xs-2 control-label">content</label>
+			<div class="col-xs-9">
+				<textarea class="form-control" name="content" id="content" rows="15"></textarea>
+			</div>
+			@for(error <- errors.filter(_.key == "content")) {
+				<span class="help-block">@(error.message). </span>
+			}
+		</div>
+		<div class="form-group">
+			<div class="col-xs-offset-2 col-xs-4">
+				<button type="submit" class="btn btn-default btn-sm">add entry</button>
+			</div>
+		</div>
+	</form>
+}

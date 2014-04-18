@@ -28,6 +28,7 @@ object SquerylDao extends Schema with Dao {
     entry.openForAll === true or entry.authorId === (user map (_.id) getOrElse -1L)
 
   def getPagesNumber(size: Long, itemsOnPage: Long): Long = {
+    require(itemsOnPage != 0)
     Math.ceil(size / itemsOnPage.asInstanceOf[Double]).asInstanceOf[Long]
   }
 
@@ -171,5 +172,16 @@ object SquerylDao extends Schema with Dao {
 
   def addUser(name: String, password: String): models.User = inTransaction {
     users.insert(User(name, password))
+  }
+
+  def addEntry(author: models.User, title: String, tags: Seq[models.Tag], openForAll: Boolean, content: String): models.Entry = inTransaction {
+    val entry = entries.insert(Entry(author.id, title, content, new Date, openForAll))
+    entry._author.assign(author.asInstanceOf[User])
+    tags.foreach(tag => entry._tags.associate(tag.asInstanceOf[Tag]))
+    entry
+  }
+
+  def getTags(titles: Seq[String]): Seq[models.Tag] = inTransaction {
+    tags.where(_.title in titles).toList
   }
 }

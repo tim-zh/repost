@@ -13,6 +13,7 @@ object Application extends Controller {
 
   case class LoginData(name: String, password: String)
   case class RegisterData(name: String, password: String, password2: String)
+  case class EntryData(title: String, tags: String, openForAll: Boolean, content: String)
 
   def index(page: Int) = Action { implicit req =>
     dao.init()
@@ -86,6 +87,26 @@ object Application extends Controller {
     val user = getUserFromSession
     val entry = dao.getEntry(user, id)
     renderOption(entry) { x => Ok(views.html.entry(user, x)) }
+  }
+
+  def saveEntry() = Action { implicit req =>
+    getUserFromSession match {
+      case Some(x) =>
+        val saveEntryForm = Form(mapping("title" -> nonEmptyText,
+                                         "tags" -> text,
+                                         "openForAll" -> boolean,
+                                         "content" -> nonEmptyText)(EntryData.apply)(EntryData.unapply))
+        saveEntryForm.bindFromRequest.fold(
+          badForm => Ok(views.html.saveEntry(Some(x), if (req.method == "POST") badForm.errors else Nil, badForm.data)),
+          entryData => {
+            val tags = dao.getTags(entryData.tags.split(", "))
+            val newEntry = dao.addEntry(x, entryData.title, tags, entryData.openForAll, entryData.content)
+            Redirect(routes.Application.entry(newEntry.id))
+          }
+        )
+      case None =>
+        Redirect(routes.Application.index(0))
+    }
   }
 
   def user(id: Long) = Action { implicit req =>

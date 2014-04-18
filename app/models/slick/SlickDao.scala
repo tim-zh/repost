@@ -162,9 +162,26 @@ object SlickDao extends Dao {
   }
 
   def addUser(name: String, password: String): models.User = {
+    var id = -1L
     db withDynTransaction {
-      users map (x => (x.name, x.password)) += (name, password)
+      id = (users.map(x => (x.name, x.password)) returning users.map(_.id)) += (name, password)
     }
-    getUser(name).get
+    getUser(id).get
+  }
+
+  def addEntry(author: models.User, title: String, tags: Seq[models.Tag], openForAll: Boolean, content: String): models.Entry = {
+    var id = -1L
+    db withDynTransaction {
+      id = (entries.map(x => (x.author, x.title, x.content, x.openForAll)) returning entries.map(_.id)) +=
+        (author.id, title, content, openForAll)
+      tags.foreach(tag => entryTagRelation += (id, tag.id))
+    }
+    getEntry(id).get
+  }
+
+  def getTags(titles: Seq[String]): Seq[models.Tag] = {
+    db withDynTransaction {
+      tags.filter(_.title inSet titles).list map ModelConverter.getTag
+    }
   }
 }

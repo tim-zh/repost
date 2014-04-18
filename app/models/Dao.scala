@@ -18,4 +18,8 @@ trait Dao {
   def getEntry(user: Option[User], id: Long): Option[Entry]
 
   def addUser(name: String, password: String): User
+
+  def addEntry(author: User, title: String, tags: Seq[Tag], openForAll: Boolean, content: String): Entry
+
+  def getTags(titles: Seq[String]): Seq[Tag]
 }
