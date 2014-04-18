@@ -188,7 +188,7 @@ object SlickDao extends Dao {
   def addComment(author: models.User, entry: models.Entry, content: String): models.Comment = {
     var id = -1L
     db withDynTransaction {
-      id = (comments.map(x => (x.author, x.content, x.entry)) returning entries.map(_.id)) +=
+      id = (comments.map(x => (x.author, x.content, x.entry)) returning comments.map(_.id)) +=
         (author.id, content, entry.id)
     }
     getComment(id).get
