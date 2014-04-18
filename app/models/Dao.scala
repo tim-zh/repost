@@ -22,4 +22,6 @@ trait Dao {
   def addEntry(author: User, title: String, tags: Seq[Tag], openForAll: Boolean, content: String): Entry
 
   def getTags(titles: Seq[String]): Seq[Tag]
+
+  def addComment(author: User, entry: Entry, content: String): Comment
 }

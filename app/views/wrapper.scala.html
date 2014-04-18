@@ -1,4 +1,4 @@
-@(user: Option[User], title: String = "")(content: Html)
+@(user: Option[User], title: String = "")(content: Html)(initScript: Html = Html(""))
 <!DOCTYPE html>
 <html class="no-js">
 	<head>
@@ -70,8 +70,11 @@
 		<script src="@routes.Assets.at("javascripts/jquery-1.11.0.min.js")"></script>
 		<script src="@routes.Assets.at("javascripts/bootstrap.min.js")"></script>
 		<script src="@routes.Assets.at("javascripts/perfect-scrollbar-0.4.9.with-mousewheel.min.js")"></script>
+		<script src="@routes.Assets.at("javascripts/simple-expand.min.js")"></script>
+		<script src="@routes.Assets.at("javascripts/jquery.color-2.1.2.min.js")"></script>
 		<script>
 			$('#pageScroll').perfectScrollbar()
 		</script>
+		@initScript
 	</body>
 </html>

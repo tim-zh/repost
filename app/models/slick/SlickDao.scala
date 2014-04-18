@@ -184,4 +184,19 @@ object SlickDao extends Dao {
       tags.filter(_.title inSet titles).list map ModelConverter.getTag
     }
   }
+
+  def addComment(author: models.User, entry: models.Entry, content: String): models.Comment = {
+    var id = -1L
+    db withDynTransaction {
+      id = (comments.map(x => (x.author, x.content, x.entry)) returning entries.map(_.id)) +=
+        (author.id, content, entry.id)
+    }
+    getComment(id).get
+  }
+
+  def getComment(id: Long): Option[models.Comment] = {
+    db withDynTransaction {
+      comments.filter(_.id === id).firstOption map ModelConverter.getComment
+    }
+  }
 }

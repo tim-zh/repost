@@ -184,4 +184,11 @@ object SquerylDao extends Schema with Dao {
   def getTags(titles: Seq[String]): Seq[models.Tag] = inTransaction {
     tags.where(_.title in titles).toList
   }
+
+  def addComment(author: models.User, entry: models.Entry, content: String): models.Comment = inTransaction {
+    val comment = comments.insert(Comment(author.id, new Date, content, entry.id))
+    comment._author.assign(author.asInstanceOf[User])
+    comment._entry.assign(entry.asInstanceOf[Entry])
+    comment
+  }
 }

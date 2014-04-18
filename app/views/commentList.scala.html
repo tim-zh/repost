@@ -1,0 +1,9 @@
+@(comments: Iterable[Comment])
+@for(comment <- comments) {
+	<div class="panel panel-default" id="comment@comment.id">
+		<div class="panel-heading">@comment.author.name (@comment.date)</div>
+		<div class="panel-body">
+		@Html(comment.content)
+		</div>
+	</div>
+}

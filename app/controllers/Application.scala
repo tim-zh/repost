@@ -30,6 +30,7 @@ object Application extends Controller {
     }
   }
   case class EntryData(title: String, tags: String, openForAll: Boolean, content: String)
+  case class CommentData(entryId: Long, content: String)
 
   def index(page: Int) = Action { implicit req =>
     dao.init()
@@ -41,14 +42,14 @@ object Application extends Controller {
   def auth() = Action { implicit req =>
     val loginForm = Form(mapping("name" -> nonEmptyText, "pass" -> nonEmptyText)(LoginData.apply)(LoginData.unapply))
     loginForm.bindFromRequest.fold(
-      badForm => Redirect(routes.Application.index(0)),
+      badForm => Redirect("/"),
       loginData => {
         val user = dao.getUser(loginData.name, loginData.password)
         user match {
           case Some(x) =>
-            Redirect(routes.Application.index(0)).withSession(req.session +("user", x.id + ""))
+            Redirect("/").withSession(req.session +("user", x.id + ""))
           case None =>
-            Redirect(routes.Application.index(0))
+            Redirect("/")
         }
       }
     )
@@ -56,9 +57,9 @@ object Application extends Controller {
 
   def logout() = Action { implicit req =>
     if (req.method == "POST")
-      Redirect(routes.Application.index(0)).withNewSession
+      Redirect("/").withNewSession
     else
-      Redirect(routes.Application.index(0))
+      Redirect("/")
   }
 
   def register() = Action { implicit req =>
@@ -71,7 +72,7 @@ object Application extends Controller {
         val errors = registerData.validate
         if (errors.isEmpty) {
           val newUser = dao.addUser(registerData.name, registerData.password)
-          Redirect(routes.Application.index(0)).withSession(req.session +("user", newUser.id + ""))
+          Redirect("/").withSession(req.session +("user", newUser.id + ""))
         }
         else
           Ok(views.html.register(errors, registerData.toMap))
@@ -83,11 +84,14 @@ object Application extends Controller {
     val searchForm = Form(single("query", text))
     searchForm.bindFromRequest().get match {
       case query: String =>
-        val user = getUserFromSession
-        val (pagesNumber, entries) = dao.getEntriesBySearch(user, query, 0, Int.MaxValue)
-        Ok(views.html.entries(user, page, pagesNumber, entries, "/search"))
-      case _ =>
-        Redirect(routes.Application.index(0))
+        if (query.isEmpty)
+          Redirect("/")
+        else {
+          val user = getUserFromSession
+          val (pagesNumber, entries) = dao.getEntriesBySearch(user, query, 0, Int.MaxValue)
+          Ok(views.html.entries(user, page, pagesNumber, entries, "/search"))
+        }
+      case _ => Redirect("/")
     }
   }
 
@@ -100,29 +104,28 @@ object Application extends Controller {
     }
   }
 
-  def entry(id: Long) = Action { implicit req =>
+  def entry(id: Long, commentId: Long = -1) = Action { implicit req =>
     val user = getUserFromSession
     val entry = dao.getEntry(user, id)
-    renderOption(entry) { x => Ok(views.html.entry(user, x)) }
+    renderOption(entry) { x => Ok(views.html.entry(user, x, commentId)) }
   }
 
   def saveEntry() = Action { implicit req =>
     getUserFromSession match {
-      case Some(x) =>
+      case Some(user) =>
         val saveEntryForm = Form(mapping("title" -> nonEmptyText,
                                          "tags" -> text,
                                          "openForAll" -> boolean,
                                          "content" -> nonEmptyText)(EntryData.apply)(EntryData.unapply))
         saveEntryForm.bindFromRequest.fold(
-          badForm => Ok(views.html.saveEntry(Some(x), if (req.method == "POST") badForm.errors else Nil, badForm.data)),
+          badForm => Ok(views.html.saveEntry(Some(user), if (req.method == "POST") badForm.errors else Nil, badForm.data)),
           entryData => {
             val tags = dao.getTags(entryData.tags.split(", "))
-            val newEntry = dao.addEntry(x, entryData.title, tags, entryData.openForAll, entryData.content)
+            val newEntry = dao.addEntry(user, entryData.title, tags, entryData.openForAll, entryData.content)
             Redirect(routes.Application.entry(newEntry.id))
           }
         )
-      case None =>
-        Redirect(routes.Application.index(0))
+      case None => Redirect("/")
     }
   }
 
@@ -130,6 +133,35 @@ object Application extends Controller {
     val currentUser = getUserFromSession
     val user = dao.getUser(id)
     renderOption(user) { x => Ok(views.html.user(currentUser, x)) }
+  }
+
+  def saveComment() = Action { implicit req =>
+    getUserFromSession match {
+      case Some(user) =>
+        val saveCommentForm = Form(mapping("entryId" -> longNumber,
+          "content" -> nonEmptyText)(CommentData.apply)(CommentData.unapply))
+        saveCommentForm.bindFromRequest.fold(
+          badForm => badForm.data.get("entryId") match {
+            case Some(entryIdString) =>
+              try {
+                Redirect(routes.Application.entry(entryIdString.toLong))
+              } catch {
+                case t: NumberFormatException => Redirect("/")
+              }
+            case None => Redirect("/")
+          },
+          commentData => {
+            dao.getEntry(Some(user), commentData.entryId) match {
+              case Some(entry) =>
+                val newComment = dao.addComment(user, entry, commentData.content)
+                Redirect(routes.Application.entry(commentData.entryId, newComment.id))
+              case None =>
+                Redirect("/")
+            }
+          }
+        )
+      case None => Redirect("/")
+    }
   }
 
   private def renderOption[A](o: Option[A])(r: A => Result): Result = o match {
