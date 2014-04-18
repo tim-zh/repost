@@ -14,14 +14,16 @@
 			<label for="content" class="col-xs-2 control-label">content</label>
 			<div class="col-xs-9">
 				<textarea class="form-control" name="content" id="content" rows="15"></textarea>
+				@defining(errors.filter(_.key == "content").iterator) { i =>
+					@for(error <- i) {
+						<span class="help-block">@error.message@(if(i.hasNext) ", " else "")</span>
+					}
+				}
 			</div>
-			@for(error <- errors.filter(_.key == "content")) {
-				<span class="help-block">@(error.message). </span>
-			}
 		</div>
 		<div class="form-group">
 			<div class="col-xs-offset-2 col-xs-4">
-				<button type="submit" class="btn btn-default btn-sm">add entry</button>
+				<button type="submit" class="btn btn-success btn-sm">add entry</button>
 			</div>
 		</div>
 	</form>

@@ -14,10 +14,11 @@
 	</head>
 	<body>
 		<!--[if IE]>
-			<p class="browsehappy">You are using an <strong>outdated</strong> browser.
+			<p class="browsehappy">You are using <strong>internet explorer</strong>.
 			Please <a href="http://browsehappy.com/">upgrade your browser</a> to improve your experience.</p>
 		<![endif]-->
 		<div class="navbar navbar-inverse navbar-fixed-top" role="navigation">
+			<a class="navbar-brand" href="/">repost</a>
 			<form method="post" action="/search" class="navbar-form navbar-right">
 				<div class="input-group">
 					<div class="form-group input-group-sm">
@@ -29,7 +30,7 @@
 				</div>
 			</form>
 			@if(user.isDefined) {
-				<div class="btn-group btn-group-sm navbar-form">
+				<div class="btn-group btn-group-sm navbar-form navbar-right">
 					<div class="btn-group btn-group-sm">
 						<button type="button" class="btn btn-info btn-sm dropdown-toggle" data-toggle="dropdown">
 							@user.get.name
@@ -45,7 +46,7 @@
 					</div>
 				</div>
 			} else {
-				<form method="post" action="/auth" class="navbar-form navbar-left" role="form">
+				<form method="post" action="/auth" class="navbar-form navbar-right" role="form">
 					<div class="form-group input-group-sm">
 						<input type="text" placeholder="login" class="form-control" name="name">
 					</div>
