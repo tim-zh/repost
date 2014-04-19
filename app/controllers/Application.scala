@@ -11,27 +11,6 @@ object Application extends Controller {
   implicit val dao = SquerylDao
   val itemsOnPage = 2
 
-  case class LoginData(name: String, password: String)
-  case class RegisterData(name: String, password: String, password2: String) {
-    def this(badData: Map[String, String]) =
-      this(badData.get("name").getOrElse(""), badData.get("pass").getOrElse(""), badData.get("pass2").getOrElse(""))
-
-    def validate: Seq[FormError] = {
-      var errors = List[FormError]()
-      if (dao.getUser(name).isDefined)
-        errors = FormError("name", "user already exists") :: errors
-      if (password != password2)
-        errors = FormError("pass2", "password mismatch") :: errors
-      errors
-    }
-
-    def toMap: Map[String, String] = {
-      Map("name" -> name, "pass" -> password, "pass2" -> password2)
-    }
-  }
-  case class EntryData(title: String, tags: String, openForAll: Boolean, content: String)
-  case class CommentData(entryId: Long, content: String)
-
   def index(page: Int) = Action { implicit req =>
     dao.init()
     val user = getUserFromSession
@@ -113,14 +92,14 @@ object Application extends Controller {
   def saveEntry() = Action { implicit req =>
     getUserFromSession match {
       case Some(user) =>
-        val saveEntryForm = Form(mapping("title" -> nonEmptyText,
-                                         "tags" -> text,
+        val saveEntryForm = Form(mapping("title" -> nonEmptyText(1, 140),
+                                         "tagsHiddenString" -> text,
                                          "openForAll" -> boolean,
                                          "content" -> nonEmptyText)(EntryData.apply)(EntryData.unapply))
         saveEntryForm.bindFromRequest.fold(
           badForm => Ok(views.html.saveEntry(Some(user), if (req.method == "POST") badForm.errors else Nil, badForm.data)),
           entryData => {
-            val tags = dao.getTags(entryData.tags.split(", "))
+            val tags = dao.getTags(entryData.tags.split(",").filter("""^[\w \-]+$""".r.findFirstIn(_).isDefined))
             val newEntry = dao.addEntry(user, entryData.title, tags, entryData.openForAll, entryData.content)
             Redirect(routes.Application.entry(newEntry.id))
           }
@@ -173,4 +152,25 @@ object Application extends Controller {
     val userId = Integer.parseInt(req.session.get("user").getOrElse("-1"))
     dao.getUser(userId)
   }
+
+  case class LoginData(name: String, password: String)
+  case class RegisterData(name: String, password: String, password2: String) {
+    def this(badData: Map[String, String]) =
+      this(badData.get("name").getOrElse(""), badData.get("pass").getOrElse(""), badData.get("pass2").getOrElse(""))
+
+    def validate: Seq[FormError] = {
+      var errors = List[FormError]()
+      if (dao.getUser(name).isDefined)
+        errors = FormError("name", "user already exists") :: errors
+      if (password != password2)
+        errors = FormError("pass2", "password mismatch") :: errors
+      errors
+    }
+
+    def toMap: Map[String, String] = {
+      Map("name" -> name, "pass" -> password, "pass2" -> password2)
+    }
+  }
+  case class EntryData(title: String, tags: String, openForAll: Boolean, content: String)
+  case class CommentData(entryId: Long, content: String)
 }

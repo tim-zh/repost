@@ -28,9 +28,11 @@
 			}
 		});
 		var comment = $('#comment@commentId');
-		comment.css('backgroundColor', '#9fff9f');
-		$('html, body').animate({scrollTop: comment.offset().top}, 1000, 'swing', function() {
-			comment.animate({backgroundColor: '#ffffff'}, 200, 'linear');
-		});
+		if (comment) {
+			comment.css('backgroundColor', '#9fff9f');
+			$('html, body').animate({scrollTop: comment.offset().top}, 1000, 'swing', function() {
+				comment.animate({backgroundColor: '#ffffff'}, 200, 'linear');
+			});
+		}
 	</script>
 }

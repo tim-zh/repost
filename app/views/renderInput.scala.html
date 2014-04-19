@@ -1,8 +1,8 @@
 @(errors: Seq[FormError] = Nil, badData: Map[String, String] = Map.empty, labelText: String, inputName: String,
-		inputType: String = "text", placeholder: String = "")
+		inputType: String = "text", placeholder: String = "")(rightContent: Html = Html(""))
 <div class="form-group@(if (errors.exists(_.key == inputName)) " has-error")">
 	<label class="col-xs-2 control-label" for="@inputName">@labelText</label>
-	<div class="col-xs-4">
+	<div class="col-xs-3">
 		<input type="@inputType" placeholder="@placeholder" class="form-control" name="@inputName" id="@inputName"
 			@{if (badData.contains(inputName)) s"value=${badData(inputName)}"}>
 		@defining(errors.filter(_.key == inputName).iterator) { i =>
@@ -11,4 +11,5 @@
 			}
 		}
 	</div>
+	@rightContent
 </div>

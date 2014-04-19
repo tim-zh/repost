@@ -2,8 +2,11 @@
 @wrapper(user) {
 	<br/>
 	<form method="post" action="/entry/save" class="form-horizontal" role="form">
-		@renderInput(errors, badData, "title", "title", "text", "title")
-		@renderInput(errors, badData, "tags", "tags", "text")
+		@renderInput(errors, badData, "title", "title", "text", "title")()
+		@renderInput(errors, badData, "tags", "tags", "text") {
+			<span id="tagListContainer"></span>
+		}
+		<input type="hidden" name="tagsHiddenString" id="tagsHiddenString">
 		<div class="form-group">
 			<label class="col-xs-offset-2 col-xs-4" for="openForAll">
 				<input type="checkbox" name="openForAll" id="openForAll">
@@ -27,4 +30,37 @@
 			</div>
 		</div>
 	</form>
-}()
+} {
+	<script>
+		var tagList = $('#tagListContainer');
+		var tagInput = $('#tags');
+		var addTags = function(str) {
+			str.
+				split(',').
+				filter(function(s) {return /^[\w \-]+$/.test(s);}).
+				forEach(function(s) {
+					var tagName = s.trim();
+					var tagString = $('#tagsHiddenString');
+					tagString.val(tagString.val() + ',' + tagName);
+					$('<a href="#" id="tag' + tagName + '" class="label label-info" style="margin-left:4px;">' + tagName + ' ×</a>').
+						appendTo(tagList).click(function() {
+							var tagNames = tagString.val().split(',');
+							tagNames = tagNames.filter(function(e) {return e !== tagName;});
+							tagString.val(tagNames.join());
+							$('#tag' + tagName).remove();
+						});
+				}
+			);
+		};
+		tagInput.keypress(function(event) {
+			if (event.keyCode == 13 && tagInput.val()) {
+				event.preventDefault();
+				addTags(tagInput.val());
+				tagInput.val("");
+			}
+		});
+		@if(badData.contains("tagsHiddenString") && !badData("tagsHiddenString").isEmpty) {
+			addTags('@(badData("tagsHiddenString"))');
+		}
+	</script>
+}

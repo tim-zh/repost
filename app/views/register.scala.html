@@ -2,9 +2,9 @@
 @wrapper(None) {
 	<br/>
 	<form method="post" action="/register" class="form-horizontal" role="form">
-		@renderInput(errors, badData, "name", "name", "text", "name")
-		@renderInput(errors, badData, "password", "pass", "password", "password")
-		@renderInput(errors, badData, "retype password", "pass2", "password", "password")
+		@renderInput(errors, badData, "name", "name", "text", "name")()
+		@renderInput(errors, badData, "password", "pass", "password", "password")()
+		@renderInput(errors, badData, "retype password", "pass2", "password", "password")()
 		<div class="form-group">
 			<div class="col-xs-offset-2 col-xs-4">
 				<button type="submit" class="btn btn-success btn-sm">register</button>
