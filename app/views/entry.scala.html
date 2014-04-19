@@ -1,7 +1,7 @@
 @(user: Option[User], entry: Entry, commentId: Long)
 @wrapper(user, entry.title) {
-	<h5>@entry.author.name:</h5>
 	<h2>@entry.title</h2>
+	<h5>by <a href="/user/@entry.author.id">@entry.author.name</a> (@entry.date.format("dd MMM yyyy hh:mm:ss"))</h5>
 	<small>@tags(entry)</small>
 	<hr/>
 	<p>@Html(entry.content)</p>
@@ -9,29 +9,27 @@
 	@if(user.isDefined) {
 		<form method="post" action="/comment/save" role="form" id="commentForm">
 			<input type="hidden" name="entryId" value="@entry.id">
-			<div class="expander-content">
+			<div id="expanderContent" style="display:none">
 				<textarea class="form-control" name="content" id="content" rows="8"></textarea>
 			</div>
-			<div class="expander" id="commentExpander"></div>
 			<h5><button id="addComment" type="button" class="btn btn-sm btn-success">add comment</button></h5>
 		</form>
 	}
 	@views.html.commentList(entry.comments)
 } {
 	<script>
-		$('.expander').simpleexpand({"defaultTarget":".expander-content"});
 		var isCommentFormExpanded = false;
 		$('#addComment').click(function() {
 			if (isCommentFormExpanded)
 				$('#commentForm').submit();
 			else {
 				isCommentFormExpanded = true;
-				$('#commentExpander').click();
+				$('#expanderContent').animate({height: 'toggle', opacity: 'toggle'});
 			}
 		});
 		var comment = $('#comment@commentId');
 		comment.css('backgroundColor', '#9fff9f');
-		$('html, body').animate({scrollTop: comment.offset().top}, 800, 'swing', function() {
+		$('html, body').animate({scrollTop: comment.offset().top}, 1000, 'swing', function() {
 			comment.animate({backgroundColor: '#ffffff'}, 200, 'linear');
 		});
 	</script>
