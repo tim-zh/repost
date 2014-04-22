@@ -204,10 +204,8 @@ object SlickDao extends Dao {
                   content: String): Option[models.Entry] = {
     db withDynTransaction {
       val q = for (entry <- entries if entry.id === id && entry.author === user.map(_.id).getOrElse(-1L))
-        yield (title, openForAll, content)
-      q.update(title, openForAll, content)
-      entryTagRelation.filter(etr => etr.entry === id).delete
-      tags.foreach(tag => entryTagRelation += (id, tag.id))
+        yield entry
+      q.map(entry => (entry.title, entry.openForAll, entry.content)).update(title, openForAll, content)
     }
     getEntry(user, id)
   }
