@@ -184,8 +184,19 @@ object SquerylDao extends Schema with Dao {
     entry
   }
 
-  def getTags(titles: Seq[String]): Seq[models.Tag] = inTransaction {
-    tags.where(_.title in titles).toList
+  def getTags(titles: Seq[String], addNew: Boolean): Seq[models.Tag] = inTransaction {
+    val existingTags = tags.where(_.title in titles).toList
+    if (addNew) {
+      val existingTitles = existingTags.map(_.title)
+      val existingTagMap = existingTitles.zip(existingTags).toMap
+      titles.map { title =>
+        if (existingTagMap.contains(title))
+          existingTagMap(title)
+        else
+          tags.insert(Tag(title))
+      }
+    } else
+      existingTags
   }
 
   def addComment(author: models.User, entry: models.Entry, content: String): models.Comment = inTransaction {

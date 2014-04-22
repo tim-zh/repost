@@ -109,20 +109,10 @@ object Application extends Controller {
                                            "tagsHiddenString" -> text,
                                            "openForAll" -> boolean,
                                            "content" -> nonEmptyText)(EntryData.apply)(EntryData.unapply))
-          saveEntryForm.bind(Map("id" -> "1",
-                                          "title" -> "entry1",
-                                          "tagsHiddenString" -> "",
-                                          "openForAll" -> "true",
-                                          "content" -> "con")).fold(
-            badForm =>
-              Redirect("/"),
-            entryData => {
-              Redirect("/")
-            })
           saveEntryForm.bindFromRequest.fold(
             badForm => Ok(views.html.saveEntry(Some(user), if (req.method == "POST") badForm.errors else Nil, badForm.data)),
             entryData => {
-              val tags = dao.getTags(entryData.tags.split(",").filter("""^[\w \-]+$""".r.findFirstIn(_).isDefined))
+              val tags = dao.getTags(entryData.tags.split(",").filter("""^[\w \-]+$""".r.findFirstIn(_).isDefined), true)
               if (entryData.id == -1) {
                 val newEntry = dao.addEntry(user, entryData.title, tags, entryData.openForAll, entryData.content)
                 Redirect(routes.Application.entry(newEntry.id))
@@ -148,8 +138,6 @@ object Application extends Controller {
       case id: Long =>
         val user = getUserFromSession
         dao.deleteEntry(user, id)
-        Redirect("/")
-      case _ =>
         Redirect("/")
     }
     Redirect("/")

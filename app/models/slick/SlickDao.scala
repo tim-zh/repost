@@ -169,19 +169,34 @@ object SlickDao extends Dao {
     getUser(id).get
   }
 
-  def addEntry(author: models.User, title: String, tags: Seq[models.Tag], openForAll: Boolean, content: String): models.Entry = {
+  def addEntry(author: models.User, title: String, entryTags: Seq[models.Tag], openForAll: Boolean, content: String): models.Entry = {
     var id = -1L
     db withDynTransaction {
       id = (entries.map(x => (x.author, x.title, x.content, x.openForAll)) returning entries.map(_.id)) +=
         (author.id, title, content, openForAll)
-      tags.foreach(tag => entryTagRelation += (id, tag.id))
+      entryTags.foreach(tag => entryTagRelation += (id, tag.id))
     }
     getEntry(id).get
   }
 
-  def getTags(titles: Seq[String]): Seq[models.Tag] = {
+  def getTags(titles: Seq[String], addNew: Boolean): Seq[models.Tag] = {
     db withDynTransaction {
-      tags.filter(_.title inSet titles).list map ModelConverter.getTag
+      val existingTags = tags.filter(_.title inSet titles).list map ModelConverter.getTag
+      if (addNew) {
+        val existingTitles = existingTags.map(_.title)
+        val existingTagMap = existingTitles.zip(existingTags).toMap
+        titles.map { title =>
+          if (existingTagMap.contains(title))
+            existingTagMap(title)
+          else {
+            val id = (tags.map(x => (x.title)) returning tags.map(_.id)) += title
+            val result = SlickTag(title)
+            result.id = id
+            result
+          }
+        }
+      } else
+        existingTags
     }
   }
 
@@ -200,21 +215,27 @@ object SlickDao extends Dao {
     }
   }
 
-  def updateEntry(user: Option[models.User], id: Long, title: String, tags: Seq[models.Tag], openForAll: Boolean,
+  def updateEntry(user: Option[models.User], id: Long, title: String, entryTags: Seq[models.Tag], openForAll: Boolean,
                   content: String): Option[models.Entry] = {
     db withDynTransaction {
       val q = for (entry <- entries if entry.id === id && entry.author === user.map(_.id).getOrElse(-1L))
         yield entry
       q.map(entry => (entry.title, entry.openForAll, entry.content)).update(title, openForAll, content)
+      (for (etr <- entryTagRelation if etr.entry === id) yield etr).delete
+      entryTags.foreach(tag => entryTagRelation += (id, tag.id))
     }
     getEntry(user, id)
   }
 
   def deleteEntry(user: Option[models.User], id: Long): Boolean = {
     db withDynTransaction {
-      val q = for (entry <- entries if entry.id === id && entry.author === user.map(_.id).getOrElse(-1L))
-        yield entry
-      q.delete != 0
+      val q = for (entry <- entries if entry.id === id && entry.author === user.map(_.id).getOrElse(-1L)) yield entry
+      if (q.length.run == 0)
+        return false
+      (for (comment <- comments if comment.entry === id) yield comment).delete
+      (for (etr <- entryTagRelation if etr.entry === id) yield etr).delete
+      q.delete
+      true
     }
   }
 }
