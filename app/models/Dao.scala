@@ -27,4 +27,6 @@ trait Dao {
 
   def updateEntry(user: Option[User], id: Long, title: String, tags: Seq[Tag], openForAll: Boolean,
                   content: String): Option[Entry]
+
+  def deleteEntry(user: Option[User], id: Long): Boolean
 }

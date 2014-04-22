@@ -143,6 +143,15 @@ object Application extends Controller {
   }
 
   def deleteEntry() = Action { implicit req =>
+    val deleteForm = Form(single("id", longNumber))
+    deleteForm.bindFromRequest().get match {
+      case id: Long =>
+        val user = getUserFromSession
+        dao.deleteEntry(user, id)
+        Redirect("/")
+      case _ =>
+        Redirect("/")
+    }
     Redirect("/")
   }
 

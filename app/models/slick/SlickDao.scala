@@ -209,4 +209,12 @@ object SlickDao extends Dao {
     }
     getEntry(user, id)
   }
+
+  def deleteEntry(user: Option[models.User], id: Long): Boolean = {
+    db withDynTransaction {
+      val q = for (entry <- entries if entry.id === id && entry.author === user.map(_.id).getOrElse(-1L))
+        yield entry
+      q.delete != 0
+    }
+  }
 }
