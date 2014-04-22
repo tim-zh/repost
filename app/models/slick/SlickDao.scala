@@ -199,4 +199,16 @@ object SlickDao extends Dao {
       comments.filter(_.id === id).firstOption map ModelConverter.getComment
     }
   }
+
+  def updateEntry(user: Option[models.User], id: Long, title: String, tags: Seq[models.Tag], openForAll: Boolean,
+                  content: String): Option[models.Entry] = {
+    db withDynTransaction {
+      val q = for (entry <- entries if entry.id === id && entry.author === user.map(_.id).getOrElse(-1L))
+        yield (title, openForAll, content)
+      q.update(title, openForAll, content)
+      entryTagRelation.filter(etr => etr.entry === id).delete
+      tags.foreach(tag => entryTagRelation += (id, tag.id))
+    }
+    getEntry(user, id)
+  }
 }

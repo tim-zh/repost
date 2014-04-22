@@ -89,23 +89,61 @@ object Application extends Controller {
     renderOption(entry) { x => Ok(views.html.entry(user, x, commentId)) }
   }
 
-  def saveEntry() = Action { implicit req =>
+  def saveEntry(entryId: Long) = Action { implicit req =>
     getUserFromSession match {
       case Some(user) =>
-        val saveEntryForm = Form(mapping("title" -> nonEmptyText(1, 140),
-                                         "tagsHiddenString" -> text,
-                                         "openForAll" -> boolean,
-                                         "content" -> nonEmptyText)(EntryData.apply)(EntryData.unapply))
-        saveEntryForm.bindFromRequest.fold(
-          badForm => Ok(views.html.saveEntry(Some(user), if (req.method == "POST") badForm.errors else Nil, badForm.data)),
-          entryData => {
-            val tags = dao.getTags(entryData.tags.split(",").filter("""^[\w \-]+$""".r.findFirstIn(_).isDefined))
-            val newEntry = dao.addEntry(user, entryData.title, tags, entryData.openForAll, entryData.content)
-            Redirect(routes.Application.entry(newEntry.id))
-          }
-        )
+        if (entryId != -1) {
+          val entry = dao.getEntry(Some(user), entryId)
+          if (entry.isDefined && entry.get.author.id == user.id) {
+            val entryData = Map("id" -> entryId.toString,
+                                "title" -> entry.get.title,
+                                "tagsHiddenString" -> entry.get.tags.mkString(","),
+                                "openForAll" -> entry.get.openForAll.toString,
+                                "content" -> entry.get.content)
+            Ok(views.html.saveEntry(Some(user), Nil, entryData))
+          } else
+            Redirect("/")
+        } else {
+          val saveEntryForm = Form(mapping("id" -> longNumber,
+                                           "title" -> nonEmptyText(1, 140),
+                                           "tagsHiddenString" -> text,
+                                           "openForAll" -> boolean,
+                                           "content" -> nonEmptyText)(EntryData.apply)(EntryData.unapply))
+          saveEntryForm.bind(Map("id" -> "1",
+                                          "title" -> "entry1",
+                                          "tagsHiddenString" -> "",
+                                          "openForAll" -> "true",
+                                          "content" -> "con")).fold(
+            badForm =>
+              Redirect("/"),
+            entryData => {
+              Redirect("/")
+            })
+          saveEntryForm.bindFromRequest.fold(
+            badForm => Ok(views.html.saveEntry(Some(user), if (req.method == "POST") badForm.errors else Nil, badForm.data)),
+            entryData => {
+              val tags = dao.getTags(entryData.tags.split(",").filter("""^[\w \-]+$""".r.findFirstIn(_).isDefined))
+              if (entryData.id == -1) {
+                val newEntry = dao.addEntry(user, entryData.title, tags, entryData.openForAll, entryData.content)
+                Redirect(routes.Application.entry(newEntry.id))
+              } else {
+                dao.getEntry(Some(user), entryData.id) match {
+                  case Some(x) =>
+                    dao.updateEntry(Some(user), entryData.id, entryData.title, tags, entryData.openForAll, entryData.content)
+                    Redirect("/")
+                  case None =>
+                    Redirect("/")
+                }
+              }
+            }
+          )
+        }
       case None => Redirect("/")
     }
+  }
+
+  def deleteEntry() = Action { implicit req =>
+    Redirect("/")
   }
 
   def user(id: Long) = Action { implicit req =>
@@ -171,6 +209,6 @@ object Application extends Controller {
       Map("name" -> name, "pass" -> password, "pass2" -> password2)
     }
   }
-  case class EntryData(title: String, tags: String, openForAll: Boolean, content: String)
+  case class EntryData(id: Long, title: String, tags: String, openForAll: Boolean, content: String)
   case class CommentData(entryId: Long, content: String)
 }

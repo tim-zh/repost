@@ -24,3 +24,12 @@ body {
 #pageScroll li {
 	display: table-cell;
 }
+
+.btn-gear {
+    font-size: 120%;
+    padding: 0 6px;
+}
+
+.btn-delete {
+    float: right;
+}

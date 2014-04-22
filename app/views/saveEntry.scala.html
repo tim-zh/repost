@@ -1,22 +1,25 @@
-@(user: Option[User], errors: Seq[FormError] = Nil, badData: Map[String, String] = Map.empty)
+@(user: Option[User], errors: Seq[FormError] = Nil, entryData: Map[String, String] = Map.empty)
 @wrapper(user) {
 	<br/>
 	<form method="post" action="/entry/save" class="form-horizontal" role="form">
-		@renderInput(errors, badData, "title", "title", "text", "title")()
-		@renderInput(errors, badData, "tags", "tags", "text") {
+		<input type="hidden" name="id" value="@entryData.get("id").getOrElse(-1)">
+		@renderInput(errors, entryData, "title", "title", "text", "title")()
+		@renderInput(errors, entryData, "tags", "tags", "text") {
 			<span id="tagListContainer"></span>
 		}
 		<input type="hidden" name="tagsHiddenString" id="tagsHiddenString">
 		<div class="form-group">
 			<label class="col-xs-offset-2 col-xs-4" for="openForAll">
-				<input type="checkbox" name="openForAll" id="openForAll">
+				<input type="checkbox" name="openForAll" id="openForAll" value=true @*omg, checkbox binding*@
+					@(if (entryData.contains("openForAll") && entryData("openForAll") == "true") "checked")>
 				open for all
 			</label>
 		</div>
 		<div class="form-group@(if (errors.exists(_.key == "content")) " has-error")">
 			<label for="content" class="col-xs-2 control-label">content</label>
 			<div class="col-xs-9">
-				<textarea class="form-control" name="content" id="content" rows="15"></textarea>
+				<textarea class="form-control" name="content" id="content" rows="15">@(
+					if (entryData.contains("content")) entryData("content") else "")</textarea>
 				@defining(errors.filter(_.key == "content").iterator) { i =>
 					@for(error <- i) {
 						<span class="help-block">@error.message@(if(i.hasNext) ", " else "")</span>
@@ -25,13 +28,26 @@
 			</div>
 		</div>
 		<div class="form-group">
-			<div class="col-xs-offset-2 col-xs-4">
-				<button type="submit" class="btn btn-success btn-sm">add entry</button>
+			<div class="col-xs-offset-2 col-xs-9">
+				@if(entryData.contains("id") && !entryData("id").isEmpty) {
+					<button type="submit" class="btn btn-success btn-sm">update entry</button>
+					<button type="button" class="btn btn-default btn-sm" id="cancelButton">cancel</button>
+					<button type="button" class="btn btn-danger btn-sm btn-delete" id="deleteButton">delete entry</button>
+				} else {
+					<button type="submit" class="btn btn-success btn-sm">add entry</button>
+				}
 			</div>
 		</div>
 	</form>
+	@if(entryData.contains("id") && !entryData("id").isEmpty) {
+		<form method="post" action="/entry/delete" id="deleteForm">
+			<input type="hidden" name="id" value="@entryData("id")">
+		</form>
+	}
 } {
 	<script>
+		$('#cancelButton').click(function() {window.location='/';});
+		$('#deleteButton').click(function() {$('#deleteForm').submit();});
 		var tagList = $('#tagListContainer');
 		var tagInput = $('#tags');
 		var addTags = function(str) {
@@ -59,8 +75,8 @@
 				tagInput.val("");
 			}
 		});
-		@if(badData.contains("tagsHiddenString") && !badData("tagsHiddenString").isEmpty) {
-			addTags('@(badData("tagsHiddenString"))');
+		@if(entryData.contains("tagsHiddenString") && !entryData("tagsHiddenString").isEmpty) {
+			addTags('@(entryData("tagsHiddenString"))');
 		}
 	</script>
 }

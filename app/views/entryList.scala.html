@@ -1,7 +1,14 @@
-@(entries: Seq[Entry])
+@(user: Option[User], entries: Seq[Entry])
 @for(entry <- entries) {
 	<h2><a href="/entry/@entry.id">@entry.title</a></h2>
-	<h5>by <a href="/user/@entry.author.id">@entry.author.name</a> (@entry.date.format("dd MMM yyyy hh:mm:ss"))</h5>
+	<h5>
+		@if(user.isDefined && user.get.id == entry.author.id) {
+			<a href="/entry/save/@entry.id" class="btn btn-primary btn-gear">⚙</a>
+		} else {
+			by <a href="/user/@entry.author.id">@entry.author.name</a>
+		}
+		(@entry.date.format("dd MMM yyyy hh:mm:ss"))
+	</h5>
 	<small>@tags(entry)</small>
 	<div>@Html(entry.content)</div>
 	<hr/>

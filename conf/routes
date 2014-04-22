@@ -15,8 +15,10 @@ GET         /tag/:title/:page        controllers.Application.tag(title: String, 
 GET         /tag/:title              controllers.Application.tag(title: String, page: Int = 0)
 
 GET         /entry/$id<\d+>          controllers.Application.entry(id: Long, comment_id: Long ?= -1)
-GET         /entry/save              controllers.Application.saveEntry()
-POST        /entry/save              controllers.Application.saveEntry()
+GET         /entry/save              controllers.Application.saveEntry(id: Long = -1)
+GET         /entry/save/:id          controllers.Application.saveEntry(id: Long)
+POST        /entry/save              controllers.Application.saveEntry(id: Long = -1)
+POST        /entry/delete            controllers.Application.deleteEntry()
 
 POST        /comment/save            controllers.Application.saveComment()
 

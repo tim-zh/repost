@@ -1,5 +1,5 @@
 @(user: Option[User], currentPage: Int, pagesNumber: Long, entries: Seq[Entry], link: String = "", title: String = "")
 @wrapper(user, title) {
-	@entryList(entries)
+	@entryList(user, entries)
 	@navigation(currentPage, pagesNumber, link)
 }()

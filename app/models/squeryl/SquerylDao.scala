@@ -144,7 +144,8 @@ object SquerylDao extends Schema with Dao {
     tags.where(_.title === title).headOption
   }
 
-  def getEntriesByTag(user: Option[models.User], tag: models.Tag, page: Int, itemsOnPage: Int): (Long, Seq[models.Entry]) = inTransaction {
+  def getEntriesByTag(user: Option[models.User], tag: models.Tag, page: Int,
+                      itemsOnPage: Int): (Long, Seq[models.Entry]) = inTransaction {
     implicit val impUser = user
     val size = from(entries, entryTag)((entry, et) =>
       where(isEntryVisible(entry) and (entry.id === et.entryId) and (tag.id === et.tagId)) compute count
@@ -155,7 +156,8 @@ object SquerylDao extends Schema with Dao {
     (getPagesNumber(size, itemsOnPage), xs.toList)
   }
 
-  def getEntriesBySearch(user: Option[models.User], query: String, page: Int, itemsOnPage: Int): (Long, Seq[models.Entry]) = inTransaction {
+  def getEntriesBySearch(user: Option[models.User], query: String, page: Int,
+                         itemsOnPage: Int): (Long, Seq[models.Entry]) = inTransaction {
     implicit val impUser = user
     val size = from(entries)(entry =>
       where(isEntryVisible(entry) and (entry.title like "%" + query + "%")) compute count
@@ -174,7 +176,8 @@ object SquerylDao extends Schema with Dao {
     users.insert(User(name, password))
   }
 
-  def addEntry(author: models.User, title: String, tags: Seq[models.Tag], openForAll: Boolean, content: String): models.Entry = inTransaction {
+  def addEntry(author: models.User, title: String, tags: Seq[models.Tag], openForAll: Boolean,
+               content: String): models.Entry = inTransaction {
     val entry = entries.insert(Entry(author.id, title, content, new Date, openForAll))
     entry._author.assign(author.asInstanceOf[User])
     tags.foreach(tag => entry._tags.associate(tag.asInstanceOf[Tag]))
@@ -190,5 +193,16 @@ object SquerylDao extends Schema with Dao {
     comment._author.assign(author.asInstanceOf[User])
     comment._entry.assign(entry.asInstanceOf[Entry])
     comment
+  }
+
+  def updateEntry(user: Option[models.User], id: Long, title: String, tags: Seq[models.Tag], openForAll: Boolean,
+                  content: String): Option[models.Entry] = inTransaction {
+    getEntry(user, id) map { entry =>
+      entry.asInstanceOf[Entry]._tags.dissociateAll
+      tags.foreach(tag => entry.asInstanceOf[Entry]._tags.associate(tag.asInstanceOf[Tag]))
+      update(entries)(entry => where(entry.id === id) set(entry.title := title, entry.openForAll := openForAll,
+        entry.content := content))
+    }
+    getEntry(user, id)
   }
 }
