@@ -179,7 +179,7 @@ object SlickDao extends Dao {
     getEntry(id).get
   }
 
-  def getTags(titles: Seq[String], addNew: Boolean): Seq[models.Tag] = {
+  def getTagsByTitles(titles: Seq[String], addNew: Boolean): Seq[models.Tag] = {
     db withDynTransaction {
       val existingTags = tags.filter(_.title inSet titles).list map ModelConverter.getTag
       if (addNew) {
@@ -197,6 +197,12 @@ object SlickDao extends Dao {
         }
       } else
         existingTags
+    }
+  }
+
+  def getTagsBySearch(query: String): Seq[models.Tag] = {
+    db withDynTransaction {
+      tags.filter(_.title like "%" + query + "%").take(numberOfTagsBySearch).list map ModelConverter.getTag
     }
   }
 

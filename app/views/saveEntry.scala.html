@@ -75,6 +75,15 @@
 				tagInput.val("");
 			}
 		});
+		tagInput.autocomplete({
+			serviceUrl: '/tags',
+			deferRequestBy: 250,
+			delimiter: ',',
+			onSelect: function(suggestion) {
+				addTags(suggestion.value);
+				tagInput.val("");
+			}
+		});
 		@if(entryData.contains("tagsHiddenString") && !entryData("tagsHiddenString").isEmpty) {
 			addTags('@(entryData("tagsHiddenString"))');
 		}

@@ -13,6 +13,7 @@ POST        /search                  controllers.Application.search(page: Int = 
 
 GET         /tag/:title/:page        controllers.Application.tag(title: String, page: Int)
 GET         /tag/:title              controllers.Application.tag(title: String, page: Int = 0)
+GET         /tags                    controllers.Application.tags(query: String ?= "")
 
 GET         /entry/$id<\d+>          controllers.Application.entry(id: Long, comment_id: Long ?= -1)
 GET         /entry/save              controllers.Application.saveEntry(id: Long = -1)

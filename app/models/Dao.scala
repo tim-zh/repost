@@ -1,6 +1,8 @@
 package models
 
 trait Dao {
+  val numberOfTagsBySearch = 5
+
   def getUser(name: String, password: String): Option[User]
 
   def getUser(id: Long): Option[User]
@@ -21,7 +23,9 @@ trait Dao {
 
   def addEntry(author: User, title: String, tags: Seq[Tag], openForAll: Boolean, content: String): Entry
 
-  def getTags(titles: Seq[String], addNew: Boolean): Seq[Tag]
+  def getTagsByTitles(titles: Seq[String], addNew: Boolean): Seq[Tag]
+
+  def getTagsBySearch(query: String): Seq[Tag]
 
   def addComment(author: User, entry: Entry, content: String): Comment
 

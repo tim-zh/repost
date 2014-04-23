@@ -184,7 +184,7 @@ object SquerylDao extends Schema with Dao {
     entry
   }
 
-  def getTags(titles: Seq[String], addNew: Boolean): Seq[models.Tag] = inTransaction {
+  def getTagsByTitles(titles: Seq[String], addNew: Boolean): Seq[models.Tag] = inTransaction {
     val existingTags = tags.where(_.title in titles).toList
     if (addNew) {
       val existingTitles = existingTags.map(_.title)
@@ -197,6 +197,10 @@ object SquerylDao extends Schema with Dao {
       }
     } else
       existingTags
+  }
+
+  def getTagsBySearch(query: String): Seq[models.Tag] = inTransaction {
+    tags.where(_.title like "%" + query + "%").page(0, numberOfTagsBySearch).toList
   }
 
   def addComment(author: models.User, entry: models.Entry, content: String): models.Comment = inTransaction {

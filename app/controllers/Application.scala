@@ -5,6 +5,7 @@ import models.Dao
 import play.api.data._
 import play.api.data.Forms._
 import models.squeryl.SquerylDao
+import play.api.libs.json.Json
 
 object Application extends Controller {
 
@@ -83,6 +84,12 @@ object Application extends Controller {
     }
   }
 
+  def tags(query: String) = Action { implicit req =>
+    val tags = dao.getTagsBySearch(query)
+    val response = Json.obj("suggestions" -> tags.map(tag => Json.obj("value" -> tag.title)))
+    Ok(response)
+  }
+
   def entry(id: Long, commentId: Long = -1) = Action { implicit req =>
     val user = getUserFromSession
     val entry = dao.getEntry(user, id)
@@ -112,7 +119,7 @@ object Application extends Controller {
           saveEntryForm.bindFromRequest.fold(
             badForm => Ok(views.html.saveEntry(Some(user), if (req.method == "POST") badForm.errors else Nil, badForm.data)),
             entryData => {
-              val tags = dao.getTags(entryData.tags.split(",").filter("""^[\w \-]+$""".r.findFirstIn(_).isDefined), true)
+              val tags = dao.getTagsByTitles(entryData.tags.split(",").filter("""^[\w \-]+$""".r.findFirstIn(_).isDefined), true)
               if (entryData.id == -1) {
                 val newEntry = dao.addEntry(user, entryData.title, tags, entryData.openForAll, entryData.content)
                 Redirect(routes.Application.entry(newEntry.id))
