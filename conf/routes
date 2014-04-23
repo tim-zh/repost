@@ -22,6 +22,7 @@ POST        /entry/save              controllers.Application.saveEntry(id: Long 
 POST        /entry/delete            controllers.Application.deleteEntry()
 
 POST        /comment/save            controllers.Application.saveComment()
+POST        /comment/delete          controllers.Application.deleteComment()
 
 GET         /user/:id                controllers.Application.user(id: Long)
 

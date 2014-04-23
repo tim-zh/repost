@@ -16,7 +16,7 @@ object Application extends Controller {
     dao.init()
     val user = getUserFromSession
     val (pagesNumber, entries) = dao.getEntries(user, page, itemsOnPage)
-    Ok(views.html.entries(user, page, pagesNumber, entries))
+    Ok(views.html.index(user, page, pagesNumber, entries))
   }
 
   def auth() = Action { implicit req =>
@@ -69,7 +69,7 @@ object Application extends Controller {
         else {
           val user = getUserFromSession
           val (pagesNumber, entries) = dao.getEntriesBySearch(user, query, 0, Int.MaxValue)
-          Ok(views.html.entries(user, page, pagesNumber, entries, "/search"))
+          Ok(views.html.index(user, page, pagesNumber, entries, "/search"))
         }
       case _ => Redirect("/")
     }
@@ -80,7 +80,7 @@ object Application extends Controller {
     val tag = dao.getTag(title)
     renderOption(tag) { x =>
       val (pagesNumber, entries) = dao.getEntriesByTag(user, x, page, itemsOnPage)
-      Ok(views.html.entries(user, page, pagesNumber, entries, s"/tag/${x.title}", x.title))
+      Ok(views.html.index(user, page, pagesNumber, entries, s"/tag/${x.title}", x.title))
     }
   }
 
@@ -182,6 +182,18 @@ object Application extends Controller {
           }
         )
       case None => Redirect("/")
+    }
+  }
+
+  def deleteComment() = Action { implicit req =>
+    val deleteForm = Form(single("id", longNumber))
+    deleteForm.bindFromRequest().get match {
+      case id: Long =>
+        val user = getUserFromSession
+        if (dao.deleteComment(user, id))
+          Ok("true")
+        else
+          Ok("false")
     }
   }
 

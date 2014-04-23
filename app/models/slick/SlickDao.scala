@@ -244,4 +244,14 @@ object SlickDao extends Dao {
       true
     }
   }
+
+  def deleteComment(user: Option[models.User], id: Long): Boolean = {
+    db withDynTransaction {
+      val q = for (comment <- comments if comment.id === id && comment.author === user.map(_.id).getOrElse(-1L)) yield comment
+      if (q.length.run == 0)
+        return false
+      q.delete
+      true
+    }
+  }
 }

@@ -15,7 +15,7 @@
 			<h5><button id="addComment" type="button" class="btn btn-sm btn-success">add comment</button></h5>
 		</form>
 	}
-	@views.html.commentList(entry.comments)
+	@views.html.commentList(user, entry.comments)
 } {
 	<script>
 		var isCommentFormExpanded = false;
@@ -25,8 +25,17 @@
 			else {
 				isCommentFormExpanded = true;
 				$('#expanderContent').animate({height: 'toggle', opacity: 'toggle'});
+				$('#content').focus();
 			}
 		});
+		@for(comment <- entry.comments) {
+			$('#deleteComment@comment.id').click(function(){
+				$.post('/comment/delete',{id: @comment.id},function(response) {
+					if ("true" === response)
+						$('#comment@comment.id').remove();
+				});
+			});
+		}
 		var comment = $('#comment@commentId');
 		if (comment) {
 			comment.css('backgroundColor', '#9fff9f');

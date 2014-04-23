@@ -33,4 +33,6 @@ trait Dao {
                   content: String): Option[Entry]
 
   def deleteEntry(user: Option[User], id: Long): Boolean
+
+  def deleteComment(user: Option[User], id: Long): Boolean
 }

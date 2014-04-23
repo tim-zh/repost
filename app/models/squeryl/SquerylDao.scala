@@ -224,4 +224,8 @@ object SquerylDao extends Schema with Dao {
   def deleteEntry(user: Option[models.User], id: Long): Boolean = inTransaction {
     entries.deleteWhere(entry => entry.id === id and entry.authorId === user.map(_.id).getOrElse(-1L)) != 0
   }
+
+  def deleteComment(user: Option[models.User], id: Long): Boolean = inTransaction {
+    comments.deleteWhere(comment => comment.id === id and comment.authorId === user.map(_.id).getOrElse(-1L)) != 0
+  }
 }

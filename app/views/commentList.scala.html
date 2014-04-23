@@ -1,8 +1,12 @@
-@(comments: Iterable[Comment])
+@(user: Option[User], comments: Iterable[Comment])
 @for(comment <- comments) {
 	<div class="panel panel-default" id="comment@comment.id">
 		<div class="panel-heading">
-			<a href="/user/@comment.author.id">@comment.author.name</a>
+			@if(user.isDefined && user.get.id == comment.author.id) {
+				<button type="button" class="btn btn-default btn-xs" id="deleteComment@comment.id">delete</button>
+			} else {
+				<a href="/user/@comment.author.id">@comment.author.name</a>
+			}
 			(@comment.date.format("dd MMM yyyy hh:mm:ss"))
 			<a href="/entry/@comment.entry.id?comment_id=@comment.id">#</a>
 		</div>
