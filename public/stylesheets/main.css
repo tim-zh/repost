@@ -54,3 +54,7 @@ body {
 	font-weight: normal;
 	color: #3399FF;
 }
+
+.sceditor-toolbar * {
+    box-sizing: content-box;
+}

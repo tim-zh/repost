@@ -29,13 +29,13 @@
 		</div>
 		<div class="form-group">
 			<div class="col-xs-offset-2 col-xs-9">
-				@if(entryData.contains("id") && !entryData("id").isEmpty) {
+				@if(entryData.contains("id") && !entryData("id").isEmpty && entryData("id") != "-1") {
 					<button type="submit" class="btn btn-success btn-sm">update entry</button>
-					<button type="button" class="btn btn-default btn-sm" id="cancelButton">cancel</button>
 					<button type="button" class="btn btn-danger btn-sm btn-delete" id="deleteButton">delete entry</button>
 				} else {
 					<button type="submit" class="btn btn-success btn-sm">add entry</button>
 				}
+				<button type="button" class="btn btn-default btn-sm" id="cancelButton">cancel</button>
 			</div>
 		</div>
 	</form>
@@ -87,5 +87,10 @@
 		@if(entryData.contains("tagsHiddenString") && !entryData("tagsHiddenString").isEmpty) {
 			addTags('@(entryData("tagsHiddenString"))');
 		}
+		$('#content').sceditor({
+			toolbar: 'bold,italic,underline,strike,size|removeformat|image,link|orderedlist,code,quote|date,time|emoticon|maximize,source',
+			style: '@routes.Assets.at("stylesheets/jquery.sceditor.default.min.css")',
+			emoticonsRoot: '@routes.Assets.at("images/")'
+		});
 	</script>
 }

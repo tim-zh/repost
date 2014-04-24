@@ -40,12 +40,14 @@ object SquerylDao extends Schema with Dao {
 
   on(entries)(entry => declare(
     entry.id is (primaryKey, autoIncremented),
-    entry.title is indexed
+    entry.title is indexed,
+    entry.content is dbType("varchar(4096)")
   ))
 
   on(comments)(comment => declare(
     comment.id is (primaryKey, autoIncremented),
-    comment.date defaultsTo new Date
+    comment.date defaultsTo new Date,
+    comment.content is dbType("varchar(4096)")
   ))
 
   on(tags)(tag => declare(

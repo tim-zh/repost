@@ -26,6 +26,11 @@
 				isCommentFormExpanded = true;
 				$('#expanderContent').animate({height: 'toggle', opacity: 'toggle'});
 				$('#content').focus();
+				$('#content').sceditor({
+					toolbar: 'bold,italic,underline,strike,size|removeformat|image,link|orderedlist,code,quote|date,time|emoticon|maximize,source',
+					style: '@routes.Assets.at("stylesheets/jquery.sceditor.default.min.css")',
+					emoticonsRoot: '@routes.Assets.at("images/")'
+				});
 			}
 		});
 		@for(comment <- entry.comments) {
