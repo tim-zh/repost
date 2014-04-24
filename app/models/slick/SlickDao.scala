@@ -262,8 +262,8 @@ object SlickDao extends Dao {
       val q = for (user <- users if user.id === id) yield user
       if (q.length.run == 0)
         return false
-      (for (comment <- comments if comment.author === id) yield comment).delete
       (for (entry <- entries if entry.author === id) yield entry.id).list.foreach(entryId => deleteEntry(user, entryId))
+      (for (comment <- comments if comment.author === id) yield comment).delete
       q.delete
       true
     }

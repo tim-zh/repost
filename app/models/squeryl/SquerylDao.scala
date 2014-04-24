@@ -56,6 +56,8 @@ object SquerylDao extends Schema with Dao {
   userEntry.foreignKeyDeclaration.constrainReference(onDelete cascade)
   userComment.foreignKeyDeclaration.constrainReference(onDelete cascade)
   entryComment.foreignKeyDeclaration.constrainReference(onDelete cascade)
+  entryTag.leftForeignKeyDeclaration.unConstrainReference()
+  entryTag.rightForeignKeyDeclaration.unConstrainReference()
 
   def init() {
     Class.forName("org.h2.Driver")
