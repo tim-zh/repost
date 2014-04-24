@@ -1,22 +1,22 @@
-@(currentPage: Int, pagesNumber: Long, link: String)
+@(currentPage: Int, pagesNumber: Long, link: String, parameters: String = "")
 @require(pagesNumber >= 0)
 @if(pagesNumber > 1) {
 	<ul class="pagination previous-next-pagination">
 		@if(currentPage == 0) {
 			<li class="disabled"><a href="">&laquo;</a></li>
 		} else {
-			<li><a href="@link/@(currentPage - 1)">&laquo;</a></li>
+			<li><a href="@link/@(currentPage - 1)@parameters">&laquo;</a></li>
 		}
 		@if(currentPage == pagesNumber - 1) {
 			<li class="disabled"><a href="">&raquo;</a></li>
 		} else {
-			<li><a href="@link/@(currentPage + 1)">&raquo;</a></li>
+			<li><a href="@link/@(currentPage + 1)@parameters">&raquo;</a></li>
 		}
 	</ul>
 	<div id="pageScroll">
 		<ul class="pagination">
 		@for(i <- 0L until pagesNumber) {
-			<li@(if(currentPage == i) " class=active")><a href="@link/@i">@i</a></li>
+			<li@(if(currentPage == i) " class=active")><a href="@link/@i@parameters">@i</a></li>
 		}
 		</ul>
 	</div>

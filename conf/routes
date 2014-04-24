@@ -8,8 +8,8 @@ POST        /$page<\d+>              controllers.Application.index(page: Int)
 GET         /                        controllers.Application.index(page: Int = 0)
 POST        /                        controllers.Application.index(page: Int = 0)
 
-POST        /search/:page            controllers.Application.search(page: Int)
-POST        /search                  controllers.Application.search(page: Int = 0)
+GET         /search/:page            controllers.Application.search(page: Int, query: String ?= "")
+GET         /search                  controllers.Application.search(page: Int = 0, query: String ?= "")
 
 GET         /tag/:title/:page        controllers.Application.tag(title: String, page: Int)
 GET         /tag/:title              controllers.Application.tag(title: String, page: Int = 0)

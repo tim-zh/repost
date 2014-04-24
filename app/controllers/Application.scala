@@ -60,18 +60,13 @@ object Application extends Controller {
     )
   }
 
-  def search(page: Int) = Action { implicit req =>
-    val searchForm = Form(single("query", text))
-    searchForm.bindFromRequest().get match {
-      case query: String =>
-        if (query.isEmpty)
-          Redirect("/")
-        else {
-          val user = getUserFromSession
-          val (pagesNumber, entries) = dao.getEntriesBySearch(user, query, 0, Int.MaxValue)
-          Ok(views.html.index(user, page, pagesNumber, entries, "/search"))
-        }
-      case _ => Redirect("/")
+  def search(page: Int, query: String) = Action { implicit req =>
+    if (query.isEmpty)
+      Redirect("/")
+    else {
+      val user = getUserFromSession
+      val (pagesNumber, entries) = dao.getEntriesBySearch(user, query, page, itemsOnPage)
+      Ok(views.html.index(user, page, pagesNumber, entries, "/search", "?query=" + query))
     }
   }
 
@@ -80,7 +75,7 @@ object Application extends Controller {
     val tag = dao.getTag(title)
     renderOption(tag) { x =>
       val (pagesNumber, entries) = dao.getEntriesByTag(user, x, page, itemsOnPage)
-      Ok(views.html.index(user, page, pagesNumber, entries, s"/tag/${x.title}", x.title))
+      Ok(views.html.index(user, page, pagesNumber, entries, s"/tag/${x.title}", "", x.title))
     }
   }
 
