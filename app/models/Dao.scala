@@ -35,4 +35,6 @@ trait Dao {
   def deleteEntry(user: Option[User], id: Long): Boolean
 
   def deleteComment(user: Option[User], id: Long): Boolean
+
+  def deleteUser(user: Option[User], id: Long): Boolean
 }

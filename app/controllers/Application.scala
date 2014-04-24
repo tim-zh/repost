@@ -36,10 +36,7 @@ object Application extends Controller {
   }
 
   def logout() = Action { implicit req =>
-    if (req.method == "POST")
-      Redirect("/").withNewSession
-    else
-      Redirect("/")
+    Redirect("/").withNewSession
   }
 
   def register() = Action { implicit req =>
@@ -149,6 +146,17 @@ object Application extends Controller {
     val currentUser = getUserFromSession
     val user = dao.getUser(id)
     renderOption(user) { x => Ok(views.html.user(currentUser, x)) }
+  }
+
+  def deleteUser() = Action { implicit req =>
+    val deleteForm = Form(single("id", longNumber))
+    deleteForm.bindFromRequest().get match {
+      case id: Long =>
+        val user = getUserFromSession
+        dao.deleteUser(user, id)
+        Redirect("/")
+    }
+    Redirect("/")
   }
 
   def saveComment() = Action { implicit req =>

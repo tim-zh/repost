@@ -2,6 +2,10 @@
 @wrapper(currentUser, user.name) {
 	@if(currentUser.isDefined && currentUser.get.id == user.id) {
 		<h1>Hi, @user.name</h1>
+		<form method="post" action="/user/delete">
+			<input type="hidden" name="id" value="@user.id">
+			<button type="submit" class="btn btn-danger btn-sm" id="deleteButton">delete user</button>
+		</form>
 	} else {
 		<h2>It is @user.name</h2>
 	}

@@ -24,7 +24,8 @@ POST        /entry/delete            controllers.Application.deleteEntry()
 POST        /comment/save            controllers.Application.saveComment()
 POST        /comment/delete          controllers.Application.deleteComment()
 
-GET         /user/:id                controllers.Application.user(id: Long)
+GET         /user/$id<\d+>           controllers.Application.user(id: Long)
+POST        /user/delete             controllers.Application.deleteUser()
 
 # Map static resources from the /public folder to the /assets URL path
 GET         /assets/*file            controllers.Assets.at(path="/public", file)
