@@ -3,7 +3,7 @@
 	<h2><a href="/entry/@entry.id">@entry.title</a></h2>
 	<h5>
 		@if(user.isDefined && user.get.id == entry.author.id) {
-			<a href="/entry/save/@entry.id" class="btn btn-primary btn-gear">⚙</a>
+			<a href="/entry/save/@entry.id" class="btn btn-primary btn-xs">update</a>
 		} else {
 			by <a href="/user/@entry.author.id">@entry.author.name</a>
 		}

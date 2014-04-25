@@ -41,15 +41,17 @@
 			</div>
 		</div>
 	</form>
-	@if(entryData.contains("id") && !entryData("id").isEmpty) {
-		<form method="post" action="/entry/delete" id="deleteForm">
-			<input type="hidden" name="id" value="@entryData("id")">
-		</form>
-	}
 } {
 	<script>
 		$('#cancelButton').click(function() {window.location='/';});
-		$('#deleteButton').click(function() {$('#deleteForm').submit();});
+		@if(entryData.contains("id") && !entryData("id").isEmpty && entryData("id") != "-1") {
+			$('#deleteButton').click(function() {
+				$.post('/entry/delete', {id: @entryData("id")}, function(response) {
+					if ("true" === response)
+						window.location = '/';
+				});
+			});
+		}
 		var tagList = $('#tagListContainer');
 		var tagInput = $('#tags');
 		var addTags = function(str) {

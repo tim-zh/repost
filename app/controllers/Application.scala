@@ -135,14 +135,12 @@ object Application extends Controller {
   }
 
   def deleteEntry() = Action { implicit req =>
-    val deleteForm = Form(single("id", longNumber))
-    deleteForm.bindFromRequest().get match {
-      case id: Long =>
-        val user = getUserFromSession
-        dao.deleteEntry(user, id)
-        Redirect("/")
-    }
-    Redirect("/")
+    val user = getUserFromSession
+    val id = Form(single("id", longNumber)).bindFromRequest().get
+    if (dao.deleteEntry(user, id))
+      Ok("true")
+    else
+      Ok("false")
   }
 
   def user(id: Long) = Action { implicit req =>
@@ -152,13 +150,9 @@ object Application extends Controller {
   }
 
   def deleteUser() = Action { implicit req =>
-    val deleteForm = Form(single("id", longNumber))
-    deleteForm.bindFromRequest().get match {
-      case id: Long =>
-        val user = getUserFromSession
-        dao.deleteUser(user, id)
-        Redirect("/")
-    }
+    val user = getUserFromSession
+    val id = Form(single("id", longNumber)).bindFromRequest().get
+    dao.deleteUser(user, id)
     Redirect("/")
   }
 
@@ -192,15 +186,12 @@ object Application extends Controller {
   }
 
   def deleteComment() = Action { implicit req =>
-    val deleteForm = Form(single("id", longNumber))
-    deleteForm.bindFromRequest().get match {
-      case id: Long =>
-        val user = getUserFromSession
-        if (dao.deleteComment(user, id))
-          Ok("true")
-        else
-          Ok("false")
-    }
+    val user = getUserFromSession
+    val id = Form(single("id", longNumber)).bindFromRequest().get
+    if (dao.deleteComment(user, id))
+      Ok("true")
+    else
+      Ok("false")
   }
 
   private def renderOption[A](o: Option[A])(r: A => Result): Result = o match {
