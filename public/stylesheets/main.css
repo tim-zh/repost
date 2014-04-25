@@ -58,3 +58,8 @@ body {
 .sceditor-toolbar * {
     box-sizing: content-box;
 }
+
+.form-control-xs {
+	height: 100%;
+	padding: 2px 4px;
+}

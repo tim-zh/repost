@@ -15,6 +15,9 @@
 				open for all
 			</label>
 		</div>
+		<div class="form-group">
+			<div class="col-xs-offset-2"><input type="text" placeholder="image url" class="form-control form-control-xs col-xs-2" id="quickImageUrl"></div>
+		</div>
 		<div class="form-group@(if (errors.exists(_.key == "content")) " has-error")">
 			<label for="content" class="col-xs-2 control-label">content</label>
 			<div class="col-xs-9">
@@ -87,10 +90,19 @@
 		@if(entryData.contains("tagsHiddenString") && !entryData("tagsHiddenString").isEmpty) {
 			addTags('@(entryData("tagsHiddenString"))');
 		}
-		$('#content').sceditor({
+		var contentTextArea = $('#content');
+		contentTextArea.sceditor({
 			plugins: 'bbcode',
 			toolbar: 'bold,italic,underline,strike,size|removeformat|link,image,youtube|quote,orderedlist,code,center|date,time|maximize,source',
 			style: '@routes.Assets.at("stylesheets/jquery.sceditor.default.min.css")'
+		});
+		var quickImageUrl = $('#quickImageUrl');
+		quickImageUrl.keypress(function(event) {
+			if (event.keyCode == 13 && quickImageUrl.val()) {
+				event.preventDefault();
+				contentTextArea.sceditor('instance').insert('[img]' + quickImageUrl.val() + '[/img]');
+				quickImageUrl.val("");
+			}
 		});
 	</script>
 }
