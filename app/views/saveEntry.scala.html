@@ -88,9 +88,9 @@
 			addTags('@(entryData("tagsHiddenString"))');
 		}
 		$('#content').sceditor({
-			toolbar: 'bold,italic,underline,strike,size|removeformat|image,link|orderedlist,code,quote|date,time|emoticon|maximize,source',
-			style: '@routes.Assets.at("stylesheets/jquery.sceditor.default.min.css")',
-			emoticonsRoot: '@routes.Assets.at("images/")'
+			plugins: 'bbcode',
+			toolbar: 'bold,italic,underline,strike,size|removeformat|link,image,youtube|quote,orderedlist,code,center|date,time|maximize,source',
+			style: '@routes.Assets.at("stylesheets/jquery.sceditor.default.min.css")'
 		});
 	</script>
 }

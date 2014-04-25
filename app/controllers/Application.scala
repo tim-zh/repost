@@ -6,6 +6,7 @@ import play.api.data._
 import play.api.data.Forms._
 import models.squeryl.SquerylDao
 import play.api.libs.json.Json
+import scala.collection.mutable
 
 object Application extends Controller {
 
@@ -113,12 +114,14 @@ object Application extends Controller {
             entryData => {
               val tags = dao.getTagsByTitles(entryData.tags.split(",").filter("""^[\w \-]+$""".r.findFirstIn(_).isDefined), true)
               if (entryData.id == -1) {
-                val newEntry = dao.addEntry(user, entryData.title, tags, entryData.openForAll, entryData.content)
+                val newEntry = dao.addEntry(user, entryData.title, tags, entryData.openForAll,
+                  getHtmlFromBbCodeAndEscape(entryData.content))
                 Redirect(routes.Application.entry(newEntry.id))
               } else {
                 dao.getEntry(Some(user), entryData.id) match {
                   case Some(x) =>
-                    dao.updateEntry(Some(user), entryData.id, entryData.title, tags, entryData.openForAll, entryData.content)
+                    dao.updateEntry(Some(user), entryData.id, entryData.title, tags, entryData.openForAll,
+                      getHtmlFromBbCodeAndEscape(entryData.content))
                     Redirect("/")
                   case None =>
                     Redirect("/")
@@ -177,7 +180,7 @@ object Application extends Controller {
           commentData => {
             dao.getEntry(Some(user), commentData.entryId) match {
               case Some(entry) =>
-                val newComment = dao.addComment(user, entry, commentData.content)
+                val newComment = dao.addComment(user, entry, getHtmlFromBbCodeAndEscape(commentData.content))
                 Redirect(routes.Application.entry(commentData.entryId, newComment.id))
               case None =>
                 Redirect("/")
@@ -208,6 +211,37 @@ object Application extends Controller {
   private def getUserFromSession(implicit dao: Dao, req: Request[AnyContent]) = {
     val userId = Integer.parseInt(req.session.get("user").getOrElse("-1"))
     dao.getUser(userId)
+  }
+
+  private def getHtmlFromBbCodeAndEscape(text: String): String = {
+    var html: String = text
+    val bbMap = new mutable.HashMap[String, String]
+    bbMap.put("(\r\n|\r|\n|\n\r)", "<br/>")
+    bbMap.put("\\[b\\](.+?)\\[/b\\]", "<strong>$1</strong>")
+    bbMap.put("\\[i\\](.+?)\\[/i\\]", "<span style='font-style:italic'>$1</span>")
+    bbMap.put("\\[u\\](.+?)\\[/u\\]", "<span style='text-decoration:underline'>$1</span>")
+    bbMap.put("\\[s\\](.+?)\\[/s\\]", "<s>$1</s>")
+    bbMap.put("\\[size=(.+?)\\](.+?)\\[/size\\]", "<span style='font-size:$1'>$2</span>")
+    bbMap.put("\\[url\\](.+?)\\[/url\\]", "<a href='$1'>$1</a>")
+    bbMap.put("\\[url=(.+?)\\](.+?)\\[/url\\]", "<a href='$1'>$2</a>")
+    bbMap.put("\\[img\\](.+?)\\[/img\\]", "<img src='$1' />")
+    bbMap.put("\\[img=(.+?),(.+?)\\](.+?)\\[/img\\]", "<img width='$1' height='$2' src='$3' />")
+    bbMap.put("\\[youtube\\](.+?)\\[/youtube\\]", "<object width='640' height='380'>" +
+      "<param name='movie' value='http://www.youtube.com/v/$1'></param>" +
+      "<embed src='http://www.youtube.com/v/$1' type='application/x-shockwave-flash' width='640' height='380'></embed></object>")
+    bbMap.put("\\[quote\\](.+?)\\[/quote\\]", "<blockquote>$1</blockquote>")
+    bbMap.put("\\[ol\\](.+?)\\[/ol\\]", "<ol>$1</ol>")
+    bbMap.put("\\[li\\](.+?)\\[/li\\]", "<li>$1</li>")
+    bbMap.put("\\[center\\](.+?)\\[/center\\]", "<div align='center'>$1")
+    bbMap.put("\\[code\\](.+?)\\[/code\\]", "<code>$1</code>")
+    bbMap.put("\\[p\\](.+?)\\[/p\\]", "<p>$1</p>")
+    bbMap.put("\\[p=(.+?),(.+?)\\](.+?)\\[/p\\]", "<p style='text-indent:$1pxline-height:$2%'>$3</p>")
+
+    bbMap.put("<", "&lt;")
+    bbMap.put(">", "&gt;")
+
+    bbMap.foreach(entry => html = html.replaceAll(entry._1, entry._2))
+    html
   }
 
   case class LoginData(name: String, password: String)
