@@ -16,13 +16,12 @@
 			</label>
 		</div>
 		<div class="form-group">
-			<div class="col-xs-offset-2"><input type="text" placeholder="image url" class="form-control form-control-xs col-xs-2" id="quickImageUrl"></div>
+			<div class="col-xs-2 col-xs-offset-2"><input type="text" placeholder="image url" class="form-control form-control-xs" id="quickImageUrl"></div>
 		</div>
 		<div class="form-group@(if (errors.exists(_.key == "content")) " has-error")">
 			<label for="content" class="col-xs-2 control-label">content</label>
 			<div class="col-xs-9">
-				<textarea class="form-control" name="content" id="content" rows="15">@(
-					if (entryData.contains("content")) entryData("content") else "")</textarea>
+				<textarea class="form-control" name="content" id="content" rows="15"></textarea>
 				@defining(errors.filter(_.key == "content").iterator) { i =>
 					@for(error <- i) {
 						<span class="help-block">@error.message@(if(i.hasNext) ", " else "")</span>
@@ -91,9 +90,30 @@
 			addTags('@(entryData("tagsHiddenString"))');
 		}
 		var contentTextArea = $('#content');
+		@if(entryData.contains("content")) {
+			var text = '@Html(entryData("content"))';
+			[
+				[/<br\/>/g, '\r\n'],
+				[/<strong>(.+?)<\/strong>/g, '[b]$1[/b]'],
+				[/<i>(.+?)<\/i>/g, '[i]$1[/i]'],
+				[/<u>(.+?)<\/u>/g, '[u]$1[/u]'],
+				[/<s>(.+?)<\/s>/g, '[s]$1[/s]'],
+				[/<font size=(\d+?)>(.+?)<\/font>/g, '[size=$1]$2[/size]'],
+				[/<a href='(.+?)'>(.+?)<\/a>/g, '[url=$1]$2[/url]'],
+				[/<img src='(.+?)'\/>/g, '[img]$1[/img]'],
+				[/<img width='(\d+?)' height='(\d+?)' src='(.+?)'\/>/g, '[img=$1,$2]$3[/]'],
+				[/<blockquote>(.+?)<\/blockquote>/g, '[quote]$1[/quote]'],
+				[/<ol>(.+?)<\/ol>/g, '[ol]$1[/ol]'],
+				[/<li>(.+?)<\/li>/g, '[li]$1[/li]'],
+				[/<div align='center'>(.+?)<\/div>/g, '[center]$1[/center]'],
+				[/<pre><code>(.+?)<\/code><\/pre>/g, '[code]$1[/code]'],
+				[/<p>(.+?)<\/p>/g, '[p]$1[/p]']
+			].forEach(function(pair) {text = text.replace(pair[0], pair[1])});
+			contentTextArea.val(text);
+		}
 		contentTextArea.sceditor({
 			plugins: 'bbcode',
-			toolbar: 'bold,italic,underline,strike,size|removeformat|link,image,youtube|quote,orderedlist,code,center|date,time|maximize,source',
+			toolbar: 'bold,italic,underline,strike,size|removeformat|link,image|quote,orderedlist,code,center|date,time|maximize,source',
 			style: '@routes.Assets.at("stylesheets/jquery.sceditor.default.min.css")'
 		});
 		var quickImageUrl = $('#quickImageUrl');
