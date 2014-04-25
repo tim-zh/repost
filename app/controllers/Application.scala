@@ -215,31 +215,32 @@ object Application extends Controller {
 
   private def getHtmlFromBbCodeAndEscape(text: String): String = {
     var html: String = text
+    val escapeMap = new mutable.HashMap[String, String]
+    escapeMap.put("<", "&lt;")
+    escapeMap.put(">", "&gt;")
     val bbMap = new mutable.HashMap[String, String]
-    bbMap.put("(\r\n|\r|\n|\n\r)", "<br/>")
-    bbMap.put("\\[b\\](.+?)\\[/b\\]", "<strong>$1</strong>")
-    bbMap.put("\\[i\\](.+?)\\[/i\\]", "<span style='font-style:italic'>$1</span>")
-    bbMap.put("\\[u\\](.+?)\\[/u\\]", "<span style='text-decoration:underline'>$1</span>")
-    bbMap.put("\\[s\\](.+?)\\[/s\\]", "<s>$1</s>")
-    bbMap.put("\\[size=(.+?)\\](.+?)\\[/size\\]", "<span style='font-size:$1'>$2</span>")
-    bbMap.put("\\[url\\](.+?)\\[/url\\]", "<a href='$1'>$1</a>")
-    bbMap.put("\\[url=(.+?)\\](.+?)\\[/url\\]", "<a href='$1'>$2</a>")
-    bbMap.put("\\[img\\](.+?)\\[/img\\]", "<img src='$1' />")
-    bbMap.put("\\[img=(.+?),(.+?)\\](.+?)\\[/img\\]", "<img width='$1' height='$2' src='$3' />")
-    bbMap.put("\\[youtube\\](.+?)\\[/youtube\\]", "<object width='640' height='380'>" +
+    bbMap.put("""(\r\n|\r|\n|\n\r)""", "<br/>")
+    bbMap.put("""\[b\](.+?)\[/b\]""", "<strong>$1</strong>")
+    bbMap.put("""\[i\](.+?)\[/i\]""", "<span style='font-style:italic'>$1</span>")
+    bbMap.put("""\[u\](.+?)\[/u\]""", "<span style='text-decoration:underline'>$1</span>")
+    bbMap.put("""\[s\](.+?)\[/s\]""", "<s>$1</s>")
+    bbMap.put("""\[size=(.+?)\](.+?)\[/size\]""", "<span style='font-size:$1'>$2</span>")
+    bbMap.put("""\[url\](.+?)\[/url\]""", "<a href='$1'>$1</a>")
+    bbMap.put("""\[url=(.+?)\](.+?)\[/url\]""", "<a href='$1'>$2</a>")
+    bbMap.put("""\[img\](.+?)\[/img\]""", "<img src='$1' />")
+    bbMap.put("""\[img=(.+?),(.+?)\](.+?)\[/img\]""", "<img width='$1' height='$2' src='$3'/>")
+    bbMap.put("""\[youtube\](.+?)\[/youtube\]""", "<object width='640' height='380'>" +
       "<param name='movie' value='http://www.youtube.com/v/$1'></param>" +
       "<embed src='http://www.youtube.com/v/$1' type='application/x-shockwave-flash' width='640' height='380'></embed></object>")
-    bbMap.put("\\[quote\\](.+?)\\[/quote\\]", "<blockquote>$1</blockquote>")
-    bbMap.put("\\[ol\\](.+?)\\[/ol\\]", "<ol>$1</ol>")
-    bbMap.put("\\[li\\](.+?)\\[/li\\]", "<li>$1</li>")
-    bbMap.put("\\[center\\](.+?)\\[/center\\]", "<div align='center'>$1")
-    bbMap.put("\\[code\\](.+?)\\[/code\\]", "<code>$1</code>")
-    bbMap.put("\\[p\\](.+?)\\[/p\\]", "<p>$1</p>")
-    bbMap.put("\\[p=(.+?),(.+?)\\](.+?)\\[/p\\]", "<p style='text-indent:$1pxline-height:$2%'>$3</p>")
+    bbMap.put("""\[quote\](.+?)\[/quote\]""", "<blockquote>$1</blockquote>")
+    bbMap.put("""\[ol\](.+?)\[/ol\]""", "<ol>$1</ol>")
+    bbMap.put("""\[li\](.+?)\[/li\]""", "<li>$1</li>")
+    bbMap.put("""\[center\](.+?)\[/center\]""", "<div align='center'>$1")
+    bbMap.put("""\[code\](.+?)\[/code\]""", "<pre><code>$1</code></pre>")
+    bbMap.put("""\[p\](.+?)\[/p\]""", "<p>$1</p>")
+    bbMap.put("""\[p=(.+?),(.+?)\](.+?)\[/p\]""", "<p style='text-indent:$1pxline-height:$2%'>$3</p>")
 
-    bbMap.put("<", "&lt;")
-    bbMap.put(">", "&gt;")
-
+    escapeMap.foreach(entry => html = html.replaceAll(entry._1, entry._2))
     bbMap.foreach(entry => html = html.replaceAll(entry._1, entry._2))
     html
   }

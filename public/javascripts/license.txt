@@ -1,5 +1,6 @@
 ﻿Copyright 2012 DevBridge and other contributors http://www.devbridge.com/projects/autocomplete/jquery/
 Copyright (C) 2011 by Sam Clarke and contributors – sceditor.com
+Copyright (c) 2006, Ivan Sagalaev - highlightjs.org
 
 Permission is hereby granted, free of charge, to any person obtaining
 a copy of this software and associated documentation files (the

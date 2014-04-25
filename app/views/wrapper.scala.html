@@ -12,6 +12,7 @@
 		<link rel="stylesheet" href="@routes.Assets.at("stylesheets/bootstrap-theme.min.css")">
 		<link rel="stylesheet" href="@routes.Assets.at("stylesheets/perfect-scrollbar.css")">
 		<link rel="stylesheet" href="@routes.Assets.at("stylesheets/jquery.sceditor.default.theme.min.css")">
+		<link rel="stylesheet" href="@routes.Assets.at("stylesheets/highlight/dark.css")">
 	</head>
 	<body>
 		<!--[if IE]>
@@ -74,8 +75,10 @@
 		<script src="@routes.Assets.at("javascripts/jquery.color-2.1.2.min.js")"></script>
 		<script src="@routes.Assets.at("javascripts/jquery.autocomplete.min.js")"></script>
 		<script src="@routes.Assets.at("javascripts/jquery.sceditor.bbcode.min.js")"></script>
+		<script src="@routes.Assets.at("javascripts/highlight.pack.js")"></script>
 		<script>
-			$('#pageScroll').perfectScrollbar()
+			$('#pageScroll').perfectScrollbar();
+			hljs.initHighlightingOnLoad();
 		</script>
 		@initScript
 	</body>
