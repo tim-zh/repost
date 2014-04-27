@@ -182,7 +182,7 @@ object SquerylDao extends Schema with Dao {
 
   def addEntry(author: models.User, title: String, tags: Seq[models.Tag], openForAll: Boolean,
                content: String): models.Entry = inTransaction {
-    val entry = entries.insert(Entry(author.id, title, content, new Date, openForAll))
+    val entry = entries.insert(Entry(author.id, if (title.isEmpty) "_" else title, content, new Date, openForAll))
     entry._author.assign(author.asInstanceOf[User])
     tags.foreach(tag => entry._tags.associate(tag.asInstanceOf[Tag]))
     entry

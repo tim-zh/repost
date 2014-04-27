@@ -11,12 +11,19 @@
 		<div class="form-group">
 			<label class="col-xs-offset-2 col-xs-4" for="openForAll">
 				<input type="checkbox" name="openForAll" id="openForAll" value=true @*omg, checkbox binding*@
-					@(if (entryData.contains("openForAll") && entryData("openForAll") == "true") "checked")>
+					@(if (entryData.contains("openForAll") && entryData("openForAll") == "true" || !entryData.contains("id")) "checked")>
 				open for all
 			</label>
 		</div>
 		<div class="form-group">
-			<div class="col-xs-2 col-xs-offset-2"><input type="text" placeholder="image url" class="form-control form-control-xs" id="quickImageUrl"></div>
+			<div class="col-xs-2 col-xs-offset-2">
+				<div class="input-group input-group-xs">
+					<input type="text" placeholder="image url" class="form-control form-control-xs" id="quickImageUrl">
+					<span class="input-group-btn">
+						<button type="button" class="btn btn-default btn-xs" id="uploadButton">upload</button>
+					</span>
+				</div>
+			</div>
 		</div>
 		<div class="form-group@(if (errors.exists(_.key == "content")) " has-error")">
 			<label for="content" class="col-xs-2 control-label">content</label>
@@ -119,12 +126,28 @@
 			style: '@routes.Assets.at("stylesheets/jquery.sceditor.default.min.css")'
 		});
 		var quickImageUrl = $('#quickImageUrl');
+		var uploadButton = $('#uploadButton');
+		var isLoading = false;
+		var insertImage = function() {
+			if (isLoading)
+				return;
+			isLoading = true;
+			uploadButton.text("loading");
+			$.get('/image/save', {url: quickImageUrl.val()}, function(response) {
+				if (response) {
+					contentTextArea.sceditor('instance').insert('[img]' + response + '[/img]');
+					quickImageUrl.val("");
+				}
+				uploadButton.text("upload");
+				isLoading = false;
+			});
+		};
 		quickImageUrl.keypress(function(event) {
 			if (event.keyCode == 13 && quickImageUrl.val()) {
 				event.preventDefault();
-				contentTextArea.sceditor('instance').insert('[img]' + quickImageUrl.val() + '[/img]');
-				quickImageUrl.val("");
+				insertImage();
 			}
 		});
+		uploadButton.click(insertImage);
 	</script>
 }

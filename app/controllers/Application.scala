@@ -7,6 +7,12 @@ import play.api.data.Forms._
 import models.squeryl.SquerylDao
 import play.api.libs.json.Json
 import scala.collection.mutable
+import play.api.libs.ws.WS
+import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.Future
+import java.io._
+import play.api.libs.iteratee._
+import com.ning.http.util.AsyncHttpProviderUtils
 
 object Application extends Controller {
 
@@ -105,7 +111,7 @@ object Application extends Controller {
             Redirect("/")
         } else {
           val saveEntryForm = Form(mapping("id" -> longNumber,
-                                           "title" -> nonEmptyText(1, 140),
+                                           "title" -> text(0, 140),
                                            "tagsHiddenString" -> text,
                                            "openForAll" -> boolean,
                                            "content" -> nonEmptyText)(EntryData.apply)(EntryData.unapply))
@@ -192,6 +198,40 @@ object Application extends Controller {
       Ok("true")
     else
       Ok("false")
+  }
+
+  def saveImage(url: String) = Action.async { implicit req =>
+    def fromStream(stream: OutputStream): Iteratee[Array[Byte], Unit] = Cont {
+      case e @ Input.EOF =>
+        stream.close()
+        Done((), e)
+      case Input.El(data) =>
+        stream.write(data)
+        fromStream(stream)
+      case Input.Empty =>
+        fromStream(stream)
+    }
+
+    val user = getUserFromSession
+    var result: Future[SimpleResult] = scala.concurrent.future(Ok(""))
+    if (user.isDefined) {
+      var filename = util.Random.nextLong().toHexString + """(\.\w{1,5})$""".r.findFirstIn(url).getOrElse("")
+      try {
+        AsyncHttpProviderUtils.validateSupportedScheme(AsyncHttpProviderUtils.createUri(url))
+        val file = new File("public/images/uploaded/", filename)
+        if (!file.createNewFile())
+          throw new IOException()
+        val outputStream = new BufferedOutputStream(new FileOutputStream(file.getAbsoluteFile))
+        result = WS.url(url).withRequestTimeout(30000).get(headers => fromStream(outputStream)).flatMap(_.run).map {
+          _ => Ok(if (filename.isEmpty) "" else "/assets/images/uploaded/" + filename)
+        }
+      } catch {
+        case e @ (_: IOException | _: SecurityException | _: IllegalArgumentException) =>
+          e.printStackTrace()
+          filename = ""
+      }
+    }
+    result
   }
 
   private def renderOption[A](o: Option[A])(r: A => Result): Result = o match {

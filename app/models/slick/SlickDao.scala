@@ -173,7 +173,7 @@ object SlickDao extends Dao {
     var id = -1L
     db withDynTransaction {
       id = (entries.map(x => (x.author, x.title, x.content, x.openForAll)) returning entries.map(_.id)) +=
-        (author.id, title, content, openForAll)
+        (author.id, if (title.isEmpty) "_" else title, content, openForAll)
       entryTags.foreach(tag => entryTagRelation += (id, tag.id))
     }
     getEntry(id).get
