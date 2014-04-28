@@ -1,19 +1,19 @@
 package controllers
 
-import play.api.mvc._
+import com.ning.http.util.AsyncHttpProviderUtils
+import java.io._
 import models.Dao
+import models.squeryl.SquerylDao
 import play.api.data._
 import play.api.data.Forms._
-import models.squeryl.SquerylDao
 import play.api.libs.json.Json
-import scala.collection.mutable
+import play.api.libs.iteratee._
 import play.api.libs.ws.WS
+import play.api.mvc._
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scala.concurrent.future
-import java.io._
-import play.api.libs.iteratee._
-import com.ning.http.util.AsyncHttpProviderUtils
+import scala.collection.mutable
 
 object Application extends Controller {
 
@@ -30,7 +30,8 @@ object Application extends Controller {
   def auth() = Action { implicit req =>
     val loginForm = Form(mapping("name" -> nonEmptyText, "pass" -> nonEmptyText)(LoginData.apply)(LoginData.unapply))
     loginForm.bindFromRequest.fold(
-      badForm => Redirect("/"),
+      badForm =>
+        Redirect("/"),
       loginData => {
         val user = dao.getUser(loginData.name, loginData.password)
         user match {
@@ -51,15 +52,14 @@ object Application extends Controller {
     val registerForm = Form(mapping("name" -> nonEmptyText, "pass" -> nonEmptyText, "pass2" -> nonEmptyText)
       (RegisterData.apply)(RegisterData.unapply))
     registerForm.bindFromRequest.fold(
-      badForm => Ok(views.html.register(if (req.method == "POST")
-        badForm.errors ++ new RegisterData(badForm.data).validate else Nil, badForm.data)),
+      badForm => Ok(views.html.register(
+        if (req.method == "POST") badForm.errors ++ new RegisterData(badForm.data).validate else Nil, badForm.data)),
       registerData => {
         val errors = registerData.validate
         if (errors.isEmpty) {
           val newUser = dao.addUser(registerData.name, registerData.password)
           Redirect("/").withSession(req.session +("user", newUser.id + ""))
-        }
-        else
+        } else
           Ok(views.html.register(errors, registerData.toMap))
       }
     )
@@ -85,6 +85,7 @@ object Application extends Controller {
     }
   }
 
+  //ajax call from saveEntry form
   def tags(query: String) = Action { implicit req =>
     val tags = dao.getTagsBySearch(query)
     val response = Json.obj("suggestions" -> tags.map(tag => Json.obj("value" -> tag.title)))
@@ -100,27 +101,19 @@ object Application extends Controller {
   def saveEntry(entryId: Long) = Action { implicit req =>
     getUserFromSession match {
       case Some(user) =>
-        if (entryId != -1) {
-          val entry = dao.getEntry(Some(user), entryId)
-          if (entry.isDefined && entry.get.author.id == user.id) {
-            val entryData = Map("id" -> entryId.toString,
-                                "title" -> entry.get.title,
-                                "tagsHiddenString" -> entry.get.tags.mkString(","),
-                                "openForAll" -> entry.get.openForAll.toString,
-                                "content" -> entry.get.content)
-            Ok(views.html.saveEntry(Some(user), Nil, entryData))
-          } else
-            Redirect("/")
-        } else {
+        if (entryId == -1) {
           val saveEntryForm = Form(mapping("id" -> longNumber,
                                            "title" -> text(0, 140),
                                            "tagsHiddenString" -> text,
                                            "openForAll" -> boolean,
                                            "content" -> nonEmptyText)(EntryData.apply)(EntryData.unapply))
           saveEntryForm.bindFromRequest.fold(
-            badForm => Ok(views.html.saveEntry(Some(user), if (req.method == "POST") badForm.errors else Nil, badForm.data)),
+            badForm =>
+              Ok(views.html.saveEntry(Some(user), if (req.method == "POST") badForm.errors else Nil, badForm.data)),
             entryData => {
-              val tags = dao.getTagsByTitles(entryData.tags.split(",").filter("""^[\w \-]+$""".r.findFirstIn(_).isDefined), true)
+              val tags = dao.getTagsByTitles(
+                titles = entryData.tags.split(",").filter("""^[\w \-]+$""".r.findFirstIn(_).isDefined),
+                addNew = true)
               if (entryData.id == -1) {
                 val newEntry = dao.addEntry(user, entryData.title, tags, entryData.openForAll,
                   getHtmlFromBbCodeAndEscape(entryData.content))
@@ -137,11 +130,24 @@ object Application extends Controller {
               }
             }
           )
+        } else {
+          val entry = dao.getEntry(Some(user), entryId)
+          if (entry.isDefined && entry.get.author.id == user.id) {
+            val entryData = Map("id" -> entryId.toString,
+                                "title" -> entry.get.title,
+                                "tagsHiddenString" -> entry.get.tags.mkString(","),
+                                "openForAll" -> entry.get.openForAll.toString,
+                                "content" -> entry.get.content)
+            Ok(views.html.saveEntry(Some(user), Nil, entryData))
+          } else
+            Redirect("/")
         }
-      case None => Redirect("/")
+      case None =>
+        Redirect("/")
     }
   }
 
+  //ajax call from saveEntry form
   def deleteEntry() = Action { implicit req =>
     val user = getUserFromSession
     val id = Form(single("id", longNumber)).bindFromRequest().get
@@ -168,7 +174,7 @@ object Application extends Controller {
     getUserFromSession match {
       case Some(user) =>
         val saveCommentForm = Form(mapping("entryId" -> longNumber,
-          "content" -> nonEmptyText)(CommentData.apply)(CommentData.unapply))
+                                           "content" -> nonEmptyText)(CommentData.apply)(CommentData.unapply))
         saveCommentForm.bindFromRequest.fold(
           badForm => badForm.data.get("entryId") match {
             case Some(entryIdString) =>
@@ -177,7 +183,8 @@ object Application extends Controller {
               } catch {
                 case t: NumberFormatException => Redirect("/")
               }
-            case None => Redirect("/")
+            case None =>
+              Redirect("/")
           },
           commentData => {
             dao.getEntry(Some(user), commentData.entryId) match {
@@ -189,10 +196,12 @@ object Application extends Controller {
             }
           }
         )
-      case None => Redirect("/")
+      case None =>
+        Redirect("/")
     }
   }
 
+  //ajax call from entry form
   def deleteComment() = Action { implicit req =>
     val user = getUserFromSession
     val id = Form(single("id", longNumber)).bindFromRequest().get
@@ -202,6 +211,7 @@ object Application extends Controller {
       Ok("false")
   }
 
+  //ajax call from saveEntry form
   def saveImageFromUrl(url: String) = Action.async { implicit req =>
     def fromStream(stream: OutputStream): Iteratee[Array[Byte], Unit] = Cont {
       case e @ Input.EOF =>
@@ -236,6 +246,7 @@ object Application extends Controller {
     result
   }
 
+  //ajax call from saveEntry form
   def saveImageFromFile() = Action.async(parse.multipartFormData) { implicit req =>
     val user = getUserFromSession
     var filename = ""
@@ -259,8 +270,10 @@ object Application extends Controller {
   }
 
   private def renderOption[A](o: Option[A])(r: A => Result): Result = o match {
-    case Some(x) => r(x)
-    case None => NotFound(views.html.notFound())
+    case Some(x) =>
+      r(x)
+    case None =>
+      NotFound(views.html.notFound())
   }
 
   private def getUserFromSession(implicit dao: Dao, req: Request[_]) = {

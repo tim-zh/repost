@@ -1,10 +1,10 @@
 package models.slick
 
-import scala.slick.driver.H2Driver.simple._
-import Database.dynamicSession
+import models.Dao
 import play.api.db.DB
 import play.api.Play.current
-import models.Dao
+import scala.slick.driver.H2Driver.simple._
+import Database.dynamicSession
 
 object SlickDao extends Dao {
   val users = TableQuery[User]
@@ -14,10 +14,16 @@ object SlickDao extends Dao {
   val entryTagRelation = TableQuery[EntryTag]
   private val db = Database.forDataSource(DB.getDataSource("default"))
   private val ddl = users.ddl ++ entries.ddl ++ comments.ddl ++ tags.ddl ++ entryTagRelation.ddl
+
   private def isEntryVisible(e: Entry)(implicit user: Option[models.User]) = e.openForAll || (user match {
     case Some(x) => e.author === x.id
     case None => false
   })
+
+  private def getPagesNumber(size: Long, itemsOnPage: Long): Long = {
+    require(itemsOnPage != 0)
+    Math.ceil(size / itemsOnPage.asInstanceOf[Double]).asInstanceOf[Long]
+  }
 
   def init() {
     db withDynSession {
@@ -75,9 +81,9 @@ object SlickDao extends Dao {
     require(itemsOnPage != 0)
     db withDynTransaction {
       implicit val impUser = user
-      val pagesNumber = Math.ceil(entries.filter(isEntryVisible).length.run / itemsOnPage.asInstanceOf[Double]).asInstanceOf[Long]
+      val size = entries.filter(isEntryVisible).length.run
       val xs = entries.filter(isEntryVisible).drop(page * itemsOnPage).take(itemsOnPage).list map ModelConverter.getEntry
-      (pagesNumber, xs)
+      (getPagesNumber(size, itemsOnPage), xs)
     }
   }
 
@@ -91,14 +97,14 @@ object SlickDao extends Dao {
     require(itemsOnPage != 0)
     db withDynTransaction {
       implicit val impUser = user
-      val q = for {
+      val query = for {
         entry <- entries
         etr <- entryTagRelation
         if etr.tag === tag.id && entry.id === etr.entry && isEntryVisible(entry)
       } yield entry
-      val pagesNumber = Math.ceil(q.length.run / itemsOnPage.asInstanceOf[Double]).asInstanceOf[Long]
-      val xs = q.drop(page * itemsOnPage).take(itemsOnPage).list map ModelConverter.getEntry
-      (pagesNumber, xs)
+      val size = query.length.run
+      val xs = query.drop(page * itemsOnPage).take(itemsOnPage).list map ModelConverter.getEntry
+      (getPagesNumber(size, itemsOnPage), xs)
     }
   }
 
@@ -106,10 +112,10 @@ object SlickDao extends Dao {
     require(itemsOnPage != 0)
     db withDynTransaction {
       implicit val impUser = user
-      val q = (e: Entry) => e.title.like("%" + query + "%") && isEntryVisible(e)
-      val pagesNumber = Math.ceil(entries.filter(q).length.run / itemsOnPage.asInstanceOf[Double]).asInstanceOf[Long]
-      val xs = entries.filter(q).drop(page * itemsOnPage).take(itemsOnPage).list map ModelConverter.getEntry
-      (pagesNumber, xs)
+      val filterQuery = (e: Entry) => e.title.like("%" + query + "%") && isEntryVisible(e)
+      val size = entries.filter(filterQuery).length.run
+      val xs = entries.filter(filterQuery).drop(page * itemsOnPage).take(itemsOnPage).list map ModelConverter.getEntry
+      (getPagesNumber(size, itemsOnPage), xs)
     }
   }
 
@@ -117,47 +123,6 @@ object SlickDao extends Dao {
     db withDynTransaction {
       implicit val impUser = user
       entries.filter(e => e.id === id && isEntryVisible(e)).firstOption map ModelConverter.getEntry
-    }
-  }
-
-  def getTagsByEntry(entryId: Long): Seq[models.Tag] = {
-    db withDynTransaction {
-      val q = for {
-        tag <- tags
-        etr <- entryTagRelation
-        if etr.entry === entryId && etr.tag === tag.id
-      } yield tag
-      q.list map ModelConverter.getTag
-    }
-  }
-
-  def getComments(entryId: Long): Seq[models.Comment] = {
-    db withDynTransaction {
-      comments.filter(_.id === entryId).list map ModelConverter.getComment
-    }
-  }
-
-  def getEntriesByUser(userId: Long): Seq[models.Entry] = {
-    db withDynTransaction {
-      entries.filter(_.author === userId).list map ModelConverter.getEntry
-    }
-  }
-
-  def getCommentsByUser(userId: Long): Seq[models.Comment] = {
-    db withDynTransaction {
-      comments.filter(_.author === userId).list map ModelConverter.getComment
-    }
-  }
-
-  def getCommentsByEntry(entryId: Long): Seq[models.Comment] = {
-    db withDynTransaction {
-      comments.filter(_.entry === entryId).list map ModelConverter.getComment
-    }
-  }
-
-  def getEntry(id: Long): Option[models.Entry] = {
-    db withDynTransaction {
-      entries.filter(_.id === id).firstOption map ModelConverter.getEntry
     }
   }
 
@@ -224,9 +189,9 @@ object SlickDao extends Dao {
   def updateEntry(user: Option[models.User], id: Long, title: String, entryTags: Seq[models.Tag], openForAll: Boolean,
                   content: String): Option[models.Entry] = {
     db withDynTransaction {
-      val q = for (entry <- entries if entry.id === id && entry.author === user.map(_.id).getOrElse(-1L))
+      val query = for (entry <- entries if entry.id === id && entry.author === user.map(_.id).getOrElse(-1L))
         yield entry
-      q.map(entry => (entry.title, entry.openForAll, entry.content)).update(title, openForAll, content)
+      query.map(entry => (entry.title, entry.openForAll, entry.content)).update(title, openForAll, content)
       (for (etr <- entryTagRelation if etr.entry === id) yield etr).delete
       entryTags.foreach(tag => entryTagRelation += (id, tag.id))
     }
@@ -235,22 +200,22 @@ object SlickDao extends Dao {
 
   def deleteEntry(user: Option[models.User], id: Long): Boolean = {
     db withDynTransaction {
-      val q = for (entry <- entries if entry.id === id && entry.author === user.map(_.id).getOrElse(-1L)) yield entry
-      if (q.length.run == 0)
+      val query = for (entry <- entries if entry.id === id && entry.author === user.map(_.id).getOrElse(-1L)) yield entry
+      if (query.length.run == 0)
         return false
       (for (comment <- comments if comment.entry === id) yield comment).delete
       (for (etr <- entryTagRelation if etr.entry === id) yield etr).delete
-      q.delete
+      query.delete
       true
     }
   }
 
   def deleteComment(user: Option[models.User], id: Long): Boolean = {
     db withDynTransaction {
-      val q = for (comment <- comments if comment.id === id && comment.author === user.map(_.id).getOrElse(-1L)) yield comment
-      if (q.length.run == 0)
+      val query = for (comment <- comments if comment.id === id && comment.author === user.map(_.id).getOrElse(-1L)) yield comment
+      if (query.length.run == 0)
         return false
-      q.delete
+      query.delete
       true
     }
   }
@@ -259,13 +224,48 @@ object SlickDao extends Dao {
     if (user.map(_.id).getOrElse(-1L) != id)
       return false
     db withDynTransaction {
-      val q = for (user <- users if user.id === id) yield user
-      if (q.length.run == 0)
+      val query = for (user <- users if user.id === id) yield user
+      if (query.length.run == 0)
         return false
       (for (entry <- entries if entry.author === id) yield entry.id).list.foreach(entryId => deleteEntry(user, entryId))
       (for (comment <- comments if comment.author === id) yield comment).delete
-      q.delete
+      query.delete
       true
+    }
+  }
+
+  private[slick] def getTagsByEntry(entryId: Long): Seq[models.Tag] = {
+    db withDynTransaction {
+      val query = for {
+        tag <- tags
+        etr <- entryTagRelation
+        if etr.entry === entryId && etr.tag === tag.id
+      } yield tag
+      query.list map ModelConverter.getTag
+    }
+  }
+
+  private[slick] def getEntriesByUser(userId: Long): Seq[models.Entry] = {
+    db withDynTransaction {
+      entries.filter(_.author === userId).list map ModelConverter.getEntry
+    }
+  }
+
+  private[slick] def getCommentsByUser(userId: Long): Seq[models.Comment] = {
+    db withDynTransaction {
+      comments.filter(_.author === userId).list map ModelConverter.getComment
+    }
+  }
+
+  private[slick] def getCommentsByEntry(entryId: Long): Seq[models.Comment] = {
+    db withDynTransaction {
+      comments.filter(_.entry === entryId).list map ModelConverter.getComment
+    }
+  }
+
+  private[slick] def getEntry(id: Long): Option[models.Entry] = {
+    db withDynTransaction {
+      entries.filter(_.id === id).firstOption map ModelConverter.getEntry
     }
   }
 }

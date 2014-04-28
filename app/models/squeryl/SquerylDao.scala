@@ -1,13 +1,13 @@
 package models.squeryl
 
-import org.squeryl.PrimitiveTypeMode._
-import org.squeryl.{KeyedEntity, Session, SessionFactory, Schema}
 import java.util.Date
+import models.Dao
+import org.squeryl.{KeyedEntity, Session, SessionFactory, Schema}
 import org.squeryl.adapters.H2Adapter
+import org.squeryl.dsl.CompositeKey2
+import org.squeryl.PrimitiveTypeMode._
 import play.api.db.DB
 import play.api.Play.current
-import models.Dao
-import org.squeryl.dsl.CompositeKey2
 
 object SquerylDao extends Schema with Dao {
   val users = table[User]
@@ -24,10 +24,10 @@ object SquerylDao extends Schema with Dao {
     def id = compositeKey(entryId, tagId)
   }
 
-  def isEntryVisible(entry: Entry)(implicit user: Option[models.User]) =
+  private def isEntryVisible(entry: Entry)(implicit user: Option[models.User]) =
     entry.openForAll === true or entry.authorId === (user map (_.id) getOrElse -1L)
 
-  def getPagesNumber(size: Long, itemsOnPage: Long): Long = {
+  private def getPagesNumber(size: Long, itemsOnPage: Long): Long = {
     require(itemsOnPage != 0)
     Math.ceil(size / itemsOnPage.asInstanceOf[Double]).asInstanceOf[Long]
   }
