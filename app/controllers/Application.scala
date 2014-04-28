@@ -10,6 +10,7 @@ import scala.collection.mutable
 import play.api.libs.ws.WS
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
+import scala.concurrent.future
 import java.io._
 import play.api.libs.iteratee._
 import com.ning.http.util.AsyncHttpProviderUtils
@@ -200,7 +201,7 @@ object Application extends Controller {
       Ok("false")
   }
 
-  def saveImage(url: String) = Action.async { implicit req =>
+  def saveImageFromUrl(url: String) = Action.async { implicit req =>
     def fromStream(stream: OutputStream): Iteratee[Array[Byte], Unit] = Cont {
       case e @ Input.EOF =>
         stream.close()
@@ -213,7 +214,7 @@ object Application extends Controller {
     }
 
     val user = getUserFromSession
-    var result: Future[SimpleResult] = scala.concurrent.future(Ok(""))
+    var result: Future[SimpleResult] = future(Ok(""))
     if (user.isDefined) {
       var filename = util.Random.nextLong().toHexString + """(\.\w{1,5})$""".r.findFirstIn(url).getOrElse("")
       try {
@@ -234,12 +235,34 @@ object Application extends Controller {
     result
   }
 
+  def saveImageFromFile() = Action.async(parse.multipartFormData) { implicit req =>
+    val user = getUserFromSession
+    var filename = ""
+    if (user.isDefined) {
+      try {
+        req.body.file("quickImageFile").map { image =>
+          filename = util.Random.nextLong().toHexString + """(\.\w{1,5})$""".r.findFirstIn(image.filename).getOrElse("")
+          val file = new File("public/images/uploaded/", filename)
+          if (!file.createNewFile())
+            throw new IOException()
+          image.ref.moveTo(file, replace = true)
+        }
+      }
+      catch {
+        case e@(_: IOException | _: SecurityException) =>
+          e.printStackTrace()
+          filename = ""
+      }
+    }
+    future(Ok(if (filename.isEmpty) "" else "/assets/images/uploaded/" + filename))
+  }
+
   private def renderOption[A](o: Option[A])(r: A => Result): Result = o match {
     case Some(x) => r(x)
     case None => NotFound(views.html.notFound())
   }
 
-  private def getUserFromSession(implicit dao: Dao, req: Request[AnyContent]) = {
+  private def getUserFromSession(implicit dao: Dao, req: Request[_]) = {
     val userId = Integer.parseInt(req.session.get("user").getOrElse("-1"))
     dao.getUser(userId)
   }

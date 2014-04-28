@@ -24,6 +24,9 @@
 					</span>
 				</div>
 			</div>
+			<div class="col-xs-2">
+					<input type="file" placeholder="image file" class="form-control form-control-xs" name="quickImageFile" id="quickImageFile">
+			</div>
 		</div>
 		<div class="form-group@(if (errors.exists(_.key == "content")) " has-error")">
 			<label for="content" class="col-xs-2 control-label">content</label>
@@ -51,6 +54,7 @@
 } {
 	<script>
 		$('#cancelButton').click(function() {window.location='/';});
+
 		@if(entryData.contains("id") && !entryData("id").isEmpty && entryData("id") != "-1") {
 			$('#deleteButton').click(function() {
 				$.post('/entry/delete', {id: @entryData("id")}, function(response) {
@@ -59,6 +63,7 @@
 				});
 			});
 		}
+
 		var tagList = $('#tagListContainer');
 		var tagInput = $('#tags');
 		var addTags = function(str) {
@@ -98,6 +103,7 @@
 		@if(entryData.contains("tagsHiddenString") && !entryData("tagsHiddenString").isEmpty) {
 			addTags('@(entryData("tagsHiddenString"))');
 		}
+
 		var contentTextArea = $('#content');
 		@if(entryData.contains("content") && !entryData("id").isEmpty && entryData("id") != "-1") {
 			var text = '@Html(entryData("content"))';
@@ -125,6 +131,7 @@
 			toolbar: 'bold,italic,underline,strike,size|removeformat|link,image|quote,orderedlist,code,center|date,time|maximize,source',
 			style: '@routes.Assets.at("stylesheets/jquery.sceditor.default.min.css")'
 		});
+
 		var quickImageUrl = $('#quickImageUrl');
 		var uploadButton = $('#uploadButton');
 		var isLoading = false;
@@ -133,7 +140,7 @@
 				return;
 			isLoading = true;
 			uploadButton.text("loading");
-			$.get('/image/save', {url: quickImageUrl.val()}, function(response) {
+			$.get('/image/fromUrl', {url: quickImageUrl.val()}, function(response) {
 				if (response) {
 					contentTextArea.sceditor('instance').insert('[img]' + response + '[/img]');
 					quickImageUrl.val("");
@@ -149,5 +156,30 @@
 			}
 		});
 		uploadButton.click(insertImage);
+
+		var quickImageFile = $('#quickImageFile');
+		quickImageFile.change(function() {
+			if (isLoading)
+				return;
+			isLoading = true;
+			uploadButton.text("loading");
+			var formData = new FormData();
+			formData.append('quickImageFile', quickImageFile[0].files[0]);
+			$.ajax({
+				url:'/image/fromFile',
+				type:'POST',
+				data: formData,
+				processData: false,
+				contentType: 'multipart/form-data',
+				success: function(response) {
+					if (response) {
+						contentTextArea.sceditor('instance').insert('[img]' + response + '[/img]');
+						quickImageFile.val("");
+					}
+					uploadButton.text("upload");
+					isLoading = false;
+				}
+			})
+		});
 	</script>
 }
