@@ -71,7 +71,8 @@ object Application extends Controller {
     else {
       val user = getUserFromSession
       val (pagesNumber, entries) = dao.getEntriesBySearch(user, query, page, itemsOnPage)
-      Ok(views.html.index(user, page, pagesNumber, entries, "/search", "?query=" + query))
+      val tags = dao.getTagsBySearch(query)
+      Ok(views.html.search(user, page, pagesNumber, entries, tags, "?query=" + query))
     }
   }
 
@@ -80,7 +81,7 @@ object Application extends Controller {
     val tag = dao.getTag(title)
     renderOption(tag) { x =>
       val (pagesNumber, entries) = dao.getEntriesByTag(user, x, page, itemsOnPage)
-      Ok(views.html.index(user, page, pagesNumber, entries, s"/tag/${x.title}", "", x.title))
+      Ok(views.html.index(user, page, pagesNumber, entries, s"/tag/${x.title}", x.title))
     }
   }
 

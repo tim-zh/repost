@@ -1,4 +1,4 @@
-@(errors: Seq[FormError] = Nil, badData: Map[String, String] = Map.empty)
+@(errors: Iterable[FormError] = Nil, badData: Map[String, String] = Map.empty)
 @wrapper(None) {
 	<br/>
 	<form method="post" action="/register" class="form-horizontal" role="form">

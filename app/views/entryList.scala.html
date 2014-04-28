@@ -1,4 +1,4 @@
-@(user: Option[User], entries: Seq[Entry])
+@(user: Option[User], entries: Iterable[Entry])
 @for(entry <- entries) {
 	<h2><a href="/entry/@entry.id">@entry.title</a></h2>
 	<h5>
@@ -9,7 +9,7 @@
 		}
 		(@entry.date.format("dd MMM yyyy hh:mm:ss"))
 	</h5>
-	<small>@tags(entry)</small>
+	<small>@tags(entry.tags)</small>
 	<div>@Html(entry.content)</div>
 	<hr/>
 }

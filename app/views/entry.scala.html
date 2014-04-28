@@ -2,7 +2,7 @@
 @wrapper(user, entry.title) {
 	<h2>@entry.title</h2>
 	<h5>by <a href="/user/@entry.author.id">@entry.author.name</a> (@entry.date.format("dd MMM yyyy hh:mm:ss"))</h5>
-	<small>@tags(entry)</small>
+	<small>@tags(entry.tags)</small>
 	<hr/>
 	<p>@Html(entry.content)</p>
 	<hr/>

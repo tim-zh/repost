@@ -1,4 +1,4 @@
-@(user: Option[User], entries: Seq[Entry])
+@(user: Option[User], entries: Iterable[Entry])
 <table class="table table-striped table-hover">
 @for(entry <- entries) {
 	<tr>

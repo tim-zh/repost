@@ -1,0 +1,8 @@
+@(user: Option[User], currentPage: Int, pagesNumber: Long, entries: Iterable[Entry], tagList: Iterable[Tag], parameters: String = "")
+@wrapper(user) {
+	<h3>Tags:</h3>
+	@tags(tagList)
+	<h3>Entries:</h3>
+	@entryList(user, entries)
+	@navigation(currentPage, pagesNumber, "/search", parameters)
+}()

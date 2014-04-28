@@ -1,4 +1,4 @@
-@(errors: Seq[FormError] = Nil, inputData: Map[String, String] = Map.empty, labelText: String, inputName: String,
+@(errors: Iterable[FormError] = Nil, inputData: Map[String, String] = Map.empty, labelText: String, inputName: String,
 		inputType: String = "text", placeholder: String = "")(rightContent: Html = Html(""))
 <div class="form-group@(if (errors.exists(_.key == inputName)) " has-error")">
 	<label class="col-xs-2 control-label" for="@inputName">@labelText</label>
