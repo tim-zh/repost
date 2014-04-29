@@ -20,7 +20,7 @@
 				<div class="input-group input-group-xs">
 					<input type="text" placeholder="image url" class="form-control form-control-xs" id="quickImageUrl">
 					<span class="input-group-btn">
-						<button type="button" class="btn btn-default btn-xs" id="uploadButton">upload</button>
+						<button type="button" class="btn btn-default btn-xs" id="uploadButton" tabindex="-1">upload</button>
 					</span>
 				</div>
 			</div>
@@ -43,7 +43,7 @@
 			<div class="col-xs-offset-2 col-xs-9">
 				@if(entryData.contains("id") && !entryData("id").isEmpty && entryData("id") != "-1") {
 					<button type="submit" class="btn btn-success btn-sm">update entry</button>
-					<button type="button" class="btn btn-danger btn-sm btn-delete" id="deleteButton">delete entry</button>
+					<button type="button" class="btn btn-danger btn-sm btn-delete" id="deleteButton" tabindex="-1">delete entry</button>
 				} else {
 					<button type="submit" class="btn btn-success btn-sm">add entry</button>
 				}
