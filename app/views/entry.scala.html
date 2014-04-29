@@ -2,7 +2,7 @@
 @wrapper(user, entry.title) {
 	<h2>@entry.title</h2>
 	<h5>by <a href="/user/@entry.author.id">@entry.author.name</a> (@entry.date.format("dd MMM yyyy hh:mm:ss"))</h5>
-	<small>@tags(entry.tags)</small>
+	<small>@tagList(entry.tags)</small>
 	<hr/>
 	<p>@Html(entry.content)</p>
 	<hr/>
@@ -36,7 +36,7 @@
 		@for(comment <- entry.comments) {
 			$('#deleteComment@comment.id').click(function(){
 				$.post('/comment/delete',{id: @comment.id},function(response) {
-					if ("true" === response)
+					if ('true' === response)
 						$('#comment@comment.id').remove();
 				});
 			});

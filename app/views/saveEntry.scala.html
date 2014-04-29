@@ -43,7 +43,7 @@
 			<div class="col-xs-offset-2 col-xs-9">
 				@if(entryData.contains("id") && !entryData("id").isEmpty && entryData("id") != "-1") {
 					<button type="submit" class="btn btn-success btn-sm">update entry</button>
-					<button type="button" class="btn btn-danger btn-sm btn-delete" id="deleteButton" tabindex="-1">delete entry</button>
+					<button type="button" class="btn btn-danger btn-sm pull-right" id="deleteButton" tabindex="-1">delete entry</button>
 				} else {
 					<button type="submit" class="btn btn-success btn-sm">add entry</button>
 				}
@@ -95,6 +95,7 @@
 			serviceUrl: '/tags',
 			deferRequestBy: 250,
 			delimiter: ',',
+			triggerSelectOnValidInput: false,
 			onSelect: function(suggestion) {
 				addTags(suggestion.value);
 				tagInput.val("");

@@ -11,9 +11,10 @@ object SlickDao extends Dao {
   val entries = TableQuery[Entry]
   val comments = TableQuery[Comment]
   val tags = TableQuery[Tag]
+  val userFavoriteTagRelation = TableQuery[UserFavoriteTag]
   val entryTagRelation = TableQuery[EntryTag]
   private val db = Database.forDataSource(DB.getDataSource("default"))
-  private val ddl = users.ddl ++ entries.ddl ++ comments.ddl ++ tags.ddl ++ entryTagRelation.ddl
+  private val ddl = users.ddl ++ entries.ddl ++ comments.ddl ++ tags.ddl ++ userFavoriteTagRelation.ddl ++ entryTagRelation.ddl
 
   private def isEntryVisible(e: Entry)(implicit user: Option[models.User]) = e.openForAll || (user match {
     case Some(x) => e.author === x.id
@@ -45,6 +46,8 @@ object SlickDao extends Dao {
       tags map (x => (x.title)) ++= Seq(
         ("tag1"),
         ("tag2"))
+      userFavoriteTagRelation ++= Seq(
+        (1, 2))
       entryTagRelation ++= Seq(
         (1, 1),
         (1, 2),
@@ -180,12 +183,6 @@ object SlickDao extends Dao {
     getComment(id).get
   }
 
-  def getComment(id: Long): Option[models.Comment] = {
-    db withDynTransaction {
-      comments.filter(_.id === id).firstOption map ModelConverter.getComment
-    }
-  }
-
   def updateEntry(user: Option[models.User], id: Long, title: String, entryTags: Seq[models.Tag], openForAll: Boolean,
                   content: String): Option[models.Entry] = {
     db withDynTransaction {
@@ -229,8 +226,30 @@ object SlickDao extends Dao {
         return false
       (for (entry <- entries if entry.author === id) yield entry.id).list.foreach(entryId => deleteEntry(user, entryId))
       (for (comment <- comments if comment.author === id) yield comment).delete
+      (for (utr <- userFavoriteTagRelation if utr.user === id) yield utr).delete
       query.delete
       true
+    }
+  }
+
+  def addFavoriteTag(user: Option[models.User], title: String): Boolean = {
+    db withDynTransaction {
+      val tag = getTag(title)
+      var result = user.isDefined && tag.isDefined
+      if (result)
+        userFavoriteTagRelation += (user.get.id, tag.get.id)
+      result
+    }
+  }
+
+  def removeFavoriteTag(user: Option[models.User], title: String): Boolean = {
+    db withDynTransaction {
+      val tag = getTag(title)
+      var result = user.isDefined && tag.isDefined
+      if (result)
+        result = (for (utr <- userFavoriteTagRelation if utr.user === user.get.id && utr.tag === tag.get.id) yield utr).
+          delete != 0
+      result
     }
   }
 
@@ -257,6 +276,17 @@ object SlickDao extends Dao {
     }
   }
 
+  private[slick] def getFavoriteTagsByUser(userId: Long): Seq[models.Tag] = {
+    db withDynTransaction {
+      val query = for {
+        tag <- tags
+        utr <- userFavoriteTagRelation
+        if utr.user === userId && utr.tag === tag.id
+      } yield tag
+      query.list map ModelConverter.getTag
+    }
+  }
+
   private[slick] def getCommentsByEntry(entryId: Long): Seq[models.Comment] = {
     db withDynTransaction {
       comments.filter(_.entry === entryId).list map ModelConverter.getComment
@@ -266,6 +296,12 @@ object SlickDao extends Dao {
   private[slick] def getEntry(id: Long): Option[models.Entry] = {
     db withDynTransaction {
       entries.filter(_.id === id).firstOption map ModelConverter.getEntry
+    }
+  }
+
+  private[slick] def getComment(id: Long): Option[models.Comment] = {
+    db withDynTransaction {
+      comments.filter(_.id === id).firstOption map ModelConverter.getComment
     }
   }
 }

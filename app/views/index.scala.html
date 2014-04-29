@@ -1,5 +1,6 @@
-@(user: Option[User], currentPage: Int, pagesNumber: Long, entries: Iterable[Entry], link: String = "", title: String = "")
-@wrapper(user, title) {
+@(user: Option[User], currentPage: Int, pagesNumber: Long, entries: Iterable[Entry], link: String = "",
+		title: String = "", selectedTag: Option[Tag] = None)
+@wrapper(user, title, selectedTag) {
 	@entryList(user, entries)
 	@navigation(currentPage, pagesNumber, link)
 }()

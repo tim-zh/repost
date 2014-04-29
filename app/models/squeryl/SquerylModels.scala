@@ -14,9 +14,11 @@ case class User(name: String,
                 password: String) extends KeyedEntity[Long] with Entity with models.User {
   lazy val _entries: OneToMany[Entry] = SquerylDao.userEntry.left(this)
   lazy val _comments: OneToMany[Comment] = SquerylDao.userComment.left(this)
+  lazy val _favoriteTags = SquerylDao.userFavoriteTag.left(this)
 
   def entries: Iterable[models.Entry] = inTransaction(_entries.toList)
   def comments: Iterable[models.Comment] = inTransaction(_comments.toList)
+  def favoriteTags: Iterable[models.Tag] = inTransaction(_favoriteTags.toList)
 }
 
 case class Entry(authorId: Long,
@@ -45,5 +47,6 @@ case class Comment(authorId: Long,
 }
 
 case class Tag(title: String) extends KeyedEntity[Long] with Entity with models.Tag {
+  lazy val _users = SquerylDao.userFavoriteTag.right(this)
   lazy val _entries = SquerylDao.entryTag.right(this)
 }

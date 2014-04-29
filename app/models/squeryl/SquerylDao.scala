@@ -17,10 +17,15 @@ object SquerylDao extends Schema with Dao {
 
   val userEntry = oneToManyRelation(users, entries).via((u, e) => u.id === e.authorId)
   val userComment = oneToManyRelation(users, comments).via((u, c) => u.id === c.authorId)
+  val userFavoriteTag = manyToManyRelation(users, tags).via[UserTagKey]((u, t, utk) => (u.id === utk.userId, t.id === utk.tagId))
   val entryComment = oneToManyRelation(entries, comments).via((e, c) => e.id === c.entryId)
   val entryTag = manyToManyRelation(entries, tags).via[EntryTagKey]((e, t, etk) => (e.id === etk.entryId, t.id === etk.tagId))
 
-  class EntryTagKey(val entryId: Long, val tagId: Long) extends KeyedEntity[CompositeKey2[Long, Long]] {
+  case class UserTagKey(userId: Long, tagId: Long) extends KeyedEntity[CompositeKey2[Long, Long]] {
+    def id = compositeKey(userId, tagId)
+  }
+
+  case class EntryTagKey(entryId: Long, tagId: Long) extends KeyedEntity[CompositeKey2[Long, Long]] {
     def id = compositeKey(entryId, tagId)
   }
 
@@ -58,6 +63,8 @@ object SquerylDao extends Schema with Dao {
   userEntry.foreignKeyDeclaration.constrainReference(onDelete cascade)
   userComment.foreignKeyDeclaration.constrainReference(onDelete cascade)
   entryComment.foreignKeyDeclaration.constrainReference(onDelete cascade)
+  userFavoriteTag.leftForeignKeyDeclaration.unConstrainReference()
+  userFavoriteTag.rightForeignKeyDeclaration.unConstrainReference()
   entryTag.leftForeignKeyDeclaration.unConstrainReference()
   entryTag.rightForeignKeyDeclaration.unConstrainReference()
 
@@ -111,6 +118,7 @@ object SquerylDao extends Schema with Dao {
       tag1,
       tag2))
 
+    user1._favoriteTags.associate(tag2)
     entry1._tags.associate(tag1)
     entry1._tags.associate(tag2)
     entry2._tags.associate(tag1)
@@ -237,5 +245,21 @@ object SquerylDao extends Schema with Dao {
     if (user.map(_.id).getOrElse(-1L) != id)
       return false
     users.deleteWhere(u => u.id === id) != 0
+  }
+
+  def addFavoriteTag(user: Option[models.User], title: String): Boolean = inTransaction {
+    val tag = getTag(title)
+    var result = user.isDefined && tag.isDefined
+    if (result)
+      result = userFavoriteTag.insert(UserTagKey(user.get.id, tag.get.id)) != null
+    result
+  }
+
+  def removeFavoriteTag(user: Option[models.User], title: String): Boolean = inTransaction {
+    val tag = getTag(title)
+    var result = user.isDefined && tag.isDefined
+    if (result)
+      result = userFavoriteTag.deleteWhere(ut => ut.userId === user.get.id and ut.tagId === tag.get.id) != 0
+    result
   }
 }

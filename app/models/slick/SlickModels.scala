@@ -47,6 +47,14 @@ class Tag(ltag: lifted.Tag) extends Table[(Long, Long, String)](ltag, "tags") {
   def titleIdx = index("tag_title_idx", title)
 }
 
+class UserFavoriteTag(ltag: lifted.Tag) extends Table[(Long, Long)](ltag, "users_favorite_tags") {
+  def user = column[Long]("user_id")
+  def tag = column[Long]("tag_id")
+  def * = (user, tag)
+  def userFk = foreignKey("user_favorite_tag_user_fk", user, SlickDao.users)(_.id)
+  def tagFk = foreignKey("user_favorite_tag_tag_fk", tag, SlickDao.tags)(_.id)
+}
+
 class EntryTag(ltag: lifted.Tag) extends Table[(Long, Long)](ltag, "entries_tags") {
   def entry = column[Long]("entry_id")
   def tag = column[Long]("tag_id")
@@ -64,6 +72,7 @@ case class SlickUser(name: String,
                      password: String) extends Entity with models.User {
   def entries: Seq[models.Entry] = SlickDao.getEntriesByUser(id)
   def comments: Seq[models.Comment] = SlickDao.getCommentsByUser(id)
+  def favoriteTags: Seq[models.Tag] = SlickDao.getFavoriteTagsByUser(id)
 }
 
 case class SlickEntry(authorId: Long,

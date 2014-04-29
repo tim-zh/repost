@@ -12,6 +12,7 @@ trait User extends Entity {
   def password: String
   def entries: Iterable[Entry]
   def comments: Iterable[Comment]
+  def favoriteTags: Iterable[Tag]
 
   override def toString: String = name
 }

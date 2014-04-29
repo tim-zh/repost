@@ -81,7 +81,7 @@ object Application extends Controller {
     val tag = dao.getTag(title)
     renderOption(tag) { x =>
       val (pagesNumber, entries) = dao.getEntriesByTag(user, x, page, itemsOnPage)
-      Ok(views.html.index(user, page, pagesNumber, entries, s"/tag/${x.title}", x.title))
+      Ok(views.html.index(user, page, pagesNumber, entries, s"/tag/${x.title}", x.title, Some(x)))
     }
   }
 
@@ -206,6 +206,24 @@ object Application extends Controller {
     val user = getUserFromSession
     val id = Form(single("id", longNumber)).bindFromRequest().get
     if (dao.deleteComment(user, id))
+      Ok("true")
+    else
+      Ok("false")
+  }
+
+  //ajax call from favorite tags panel in wrapper
+  def addFavoriteTag(title: String) = Action { implicit req =>
+    val user = getUserFromSession
+    if (dao.addFavoriteTag(user, title))
+      Ok("true")
+    else
+      Ok("false")
+  }
+
+  //ajax call from favorite tags panel in wrapper
+  def removeFavoriteTag(title: String) = Action { implicit req =>
+    val user = getUserFromSession
+    if (dao.removeFavoriteTag(user, title))
       Ok("true")
     else
       Ok("false")

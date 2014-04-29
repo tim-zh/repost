@@ -1,7 +1,7 @@
-@(user: Option[User], currentPage: Int, pagesNumber: Long, entries: Iterable[Entry], tagList: Iterable[Tag], parameters: String = "")
+@(user: Option[User], currentPage: Int, pagesNumber: Long, entries: Iterable[Entry], tags: Iterable[Tag], parameters: String = "")
 @wrapper(user) {
 	<h3>Tags:</h3>
-	@tags(tagList)
+	@tagList(tags)
 	<h3>Entries:</h3>
 	@entryList(user, entries)
 	@navigation(currentPage, pagesNumber, "/search", parameters)

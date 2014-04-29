@@ -37,4 +37,8 @@ trait Dao {
   def deleteComment(user: Option[User], id: Long): Boolean
 
   def deleteUser(user: Option[User], id: Long): Boolean
+
+  def addFavoriteTag(user: Option[User], title: String): Boolean
+
+  def removeFavoriteTag(user: Option[User], title: String): Boolean
 }

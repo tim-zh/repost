@@ -25,10 +25,6 @@ body {
 	display: table-cell;
 }
 
-.btn-delete {
-	float: right;
-}
-
 .autocomplete-suggestions {
 	border: 1px solid #999;
 	background: #FFF;
@@ -57,4 +53,12 @@ body {
 .form-control-xs {
 	height: 100%;
 	padding: 2px 4px;
+}
+
+.favorite-list a {
+    overflow: hidden;
+}
+
+.favorite-list .form-control {
+    height: auto;
 }
