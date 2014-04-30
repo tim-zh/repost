@@ -7,7 +7,7 @@
 		} else {
 			by <a href="/user/@entry.author.id">@entry.author.name</a>
 		}
-		(@entry.date.format("dd MMM yyyy hh:mm:ss"))
+		(@entry.date.format(if (user.isDefined) user.get.dateFormat else "dd MMM yyyy hh:mm:ss"))
 	</h5>
 	<small>@tagList(entry.tags)</small>
 	<div>@Html(entry.content)</div>

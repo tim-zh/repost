@@ -1,6 +1,7 @@
 package models
 
 trait Dao {
+  val defaultItemsOnPage = 10
   val numberOfTagsBySearch = 5
 
   def getUser(name: String, password: String): Option[User]
@@ -36,9 +37,11 @@ trait Dao {
 
   def deleteComment(user: Option[User], id: Long): Boolean
 
-  def deleteUser(user: Option[User], id: Long): Boolean
+  def deleteUser(user: Option[User]): Boolean
 
   def addFavoriteTag(user: Option[User], title: String): Boolean
 
   def removeFavoriteTag(user: Option[User], title: String): Boolean
+
+  def updateUser(id: Long, password: String, compactEntryList: Boolean, dateFormat: String, itemsOnPage: Int, codeTheme: Int): Option[User]
 }

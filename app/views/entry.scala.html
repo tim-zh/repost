@@ -1,13 +1,16 @@
 @(user: Option[User], entry: Entry, commentId: Long)
 @wrapper(user, entry.title) {
 	<h2>@entry.title</h2>
-	<h5>by <a href="/user/@entry.author.id">@entry.author.name</a> (@entry.date.format("dd MMM yyyy hh:mm:ss"))</h5>
+	<h5>
+		by <a href="/user/@entry.author.id">@entry.author.name</a>
+		(@entry.date.format(if (user.isDefined) user.get.dateFormat else "dd MMM yyyy hh:mm:ss"))
+	</h5>
 	<small>@tagList(entry.tags)</small>
 	<hr/>
 	<p>@Html(entry.content)</p>
 	<hr/>
 	@if(user.isDefined) {
-		<form method="post" action="/comment/save" role="form" id="commentForm">
+		<form method="post" action="/comment/save" id="commentForm">
 			<input type="hidden" name="entryId" value="@entry.id">
 			<div id="expanderContent" style="display:none">
 				<textarea class="form-control" name="content" id="content" rows="8"></textarea>

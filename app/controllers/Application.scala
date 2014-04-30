@@ -2,7 +2,9 @@ package controllers
 
 import com.ning.http.util.AsyncHttpProviderUtils
 import java.io._
-import models.Dao
+import java.text.SimpleDateFormat
+import java.util.Date
+import models.{Dao, User}
 import models.squeryl.SquerylDao
 import play.api.data._
 import play.api.data.Forms._
@@ -13,17 +15,19 @@ import play.api.mvc._
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scala.concurrent.future
+import scala.collection.immutable.TreeMap
 import scala.collection.mutable
 
 object Application extends Controller {
 
   implicit val dao = SquerylDao
-  val itemsOnPage = 2
+  val codeThemeMap = TreeMap(0 -> "dark", 1 -> "github", 2 -> "google code", 3 -> "idea", 4 -> "ir black",
+    5 -> "monokai", 6 -> "monokai sublime", 7 -> "obsidian", 8 -> "vs", 9 -> "xcode")
 
   def index(page: Int) = Action { implicit req =>
     dao.init()
     val user = getUserFromSession
-    val (pagesNumber, entries) = dao.getEntries(user, page, itemsOnPage)
+    val (pagesNumber, entries) = dao.getEntries(user, page, getItemsOnPage(user))
     Ok(views.html.index(user, page, pagesNumber, entries))
   }
 
@@ -52,8 +56,9 @@ object Application extends Controller {
     val registerForm = Form(mapping("name" -> nonEmptyText, "pass" -> nonEmptyText, "pass2" -> nonEmptyText)
       (RegisterData.apply)(RegisterData.unapply))
     registerForm.bindFromRequest.fold(
-      badForm => Ok(views.html.register(
-        if (req.method == "POST") badForm.errors ++ new RegisterData(badForm.data).validate else Nil, badForm.data)),
+      badForm =>
+        Ok(views.html.register(if (req.method == "POST")
+          badForm.errors ++ new RegisterData(badForm.data).validate else Nil, badForm.data)),
       registerData => {
         val errors = registerData.validate
         if (errors.isEmpty) {
@@ -70,7 +75,7 @@ object Application extends Controller {
       Redirect("/")
     else {
       val user = getUserFromSession
-      val (pagesNumber, entries) = dao.getEntriesBySearch(user, query, page, itemsOnPage)
+      val (pagesNumber, entries) = dao.getEntriesBySearch(user, query, page, getItemsOnPage(user))
       val tags = dao.getTagsBySearch(query)
       Ok(views.html.search(user, page, pagesNumber, entries, tags, "?query=" + query))
     }
@@ -80,7 +85,7 @@ object Application extends Controller {
     val user = getUserFromSession
     val tag = dao.getTag(title)
     renderOption(tag) { x =>
-      val (pagesNumber, entries) = dao.getEntriesByTag(user, x, page, itemsOnPage)
+      val (pagesNumber, entries) = dao.getEntriesByTag(user, x, page, getItemsOnPage(user))
       Ok(views.html.index(user, page, pagesNumber, entries, s"/tag/${x.title}", x.title, Some(x)))
     }
   }
@@ -160,14 +165,47 @@ object Application extends Controller {
   def user(id: Long) = Action { implicit req =>
     val currentUser = getUserFromSession
     val user = dao.getUser(id)
-    renderOption(user) { x => Ok(views.html.user(currentUser, x)) }
+    renderOption(user) { x =>
+      Ok(views.html.user(currentUser, x, Nil,
+        UserData("", "", "", x.compactEntryList, x.dateFormat, x.itemsOnPage, x.codeTheme).toMap))
+    }
   }
 
+  def saveUser() = Action { implicit req =>
+    val user = getUserFromSession
+    if (user.isDefined) {
+      val saveUserForm = Form(mapping("oldPass" -> text,
+                                      "newPass" -> text,
+                                      "newPass2" -> text,
+                                      "compactEntryList" -> boolean,
+                                      "dateFormat" -> text,
+                                      "itemsOnPage" -> number,
+                                      "codeTheme" -> number)(UserData.apply)(UserData.unapply))
+      saveUserForm.bindFromRequest().fold(
+        badForm =>
+          Ok(views.html.user(user, user.get, badForm.errors ++
+            new UserData(badForm.data).validate(user.get.password), badForm.data)),
+        userData => {
+          val errors = userData.validate(user.get.password)
+          if (errors.isEmpty) {
+            dao.updateUser(user.get.id, if (userData.newPass != user.get.password) userData.newPass else user.get.password,
+              userData.compactEntryList, userData.dateFormat, userData.itemsOnPage, userData.codeTheme)
+            Redirect("/")
+          } else
+            Ok(views.html.user(user, user.get, errors, userData.toMap))
+        }
+      )
+    } else
+      Redirect("/")
+  }
+
+  //ajax call from user form
   def deleteUser() = Action { implicit req =>
     val user = getUserFromSession
-    val id = Form(single("id", longNumber)).bindFromRequest().get
-    dao.deleteUser(user, id)
-    Redirect("/")
+    if (dao.deleteUser(user))
+      Ok("true")
+    else
+      Ok("false")
   }
 
   def saveComment() = Action { implicit req =>
@@ -181,7 +219,8 @@ object Application extends Controller {
               try {
                 Redirect(routes.Application.entry(entryIdString.toLong))
               } catch {
-                case t: NumberFormatException => Redirect("/")
+                case t: NumberFormatException =>
+                  Redirect("/")
               }
             case None =>
               Redirect("/")
@@ -279,7 +318,7 @@ object Application extends Controller {
         }
       }
       catch {
-        case e@(_: IOException | _: SecurityException) =>
+        case e @ (_: IOException | _: SecurityException) =>
           e.printStackTrace()
           filename = ""
       }
@@ -327,6 +366,8 @@ object Application extends Controller {
     html
   }
 
+  private def getItemsOnPage(user: Option[User]) = user.map(_.itemsOnPage).getOrElse(dao.defaultItemsOnPage)
+
   case class LoginData(name: String, password: String)
   case class RegisterData(name: String, password: String, password2: String) {
     def this(badData: Map[String, String]) =
@@ -347,4 +388,38 @@ object Application extends Controller {
   }
   case class EntryData(id: Long, title: String, tags: String, openForAll: Boolean, content: String)
   case class CommentData(entryId: Long, content: String)
+  case class UserData(oldPass: String, newPass: String, newPass2: String, compactEntryList: Boolean,
+                      dateFormat: String, itemsOnPage: Int, codeTheme: Int) {
+    def this(badData: Map[String, String]) =
+      this(badData.get("oldPass").getOrElse(""), badData.get("newPass").getOrElse(""),
+          badData.get("newPass2").getOrElse(""), badData.get("compactEntryList").getOrElse("") == "true",
+          badData.get("dateFormat").getOrElse(""),
+          try { Integer.parseInt(badData.get("itemsOnPage").getOrElse(""))} catch { case _: NumberFormatException => -1},
+          try { Integer.parseInt(badData.get("codeTheme").getOrElse(""))} catch { case _: NumberFormatException => -1})
+
+    def validate(userPass: String): Seq[FormError] = {
+      var errors = List[FormError]()
+      if (!oldPass.isEmpty && oldPass != userPass)
+        errors = FormError("oldPass", "wrong password") :: errors
+      if (newPass != newPass2)
+        errors = FormError("pass2", "password mismatch") :: errors
+      try {
+        new SimpleDateFormat(dateFormat).format(new Date)
+      }
+      catch {
+        case t: IllegalArgumentException =>
+          errors = FormError("dateFormat", "incorrect date format") :: errors
+      }
+      if (itemsOnPage < 1 || itemsOnPage > 50)
+        errors = FormError("itemsOnPage", "should be >0 and <=50") :: errors
+      if (codeTheme < 0 || codeTheme > codeThemeMap.size - 1)
+        errors = FormError("codeTheme", "incorrect code block theme") :: errors
+      errors
+    }
+
+    def toMap: Map[String, String] = {
+      Map("oldPass" -> oldPass, "newPass" -> newPass, "newPass2" -> newPass2, "compactEntryList" -> compactEntryList.toString,
+        "dateFormat" -> dateFormat, "itemsOnPage" -> itemsOnPage.toString, "codeTheme" -> codeTheme.toString)
+    }
+  }
 }

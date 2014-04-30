@@ -4,7 +4,7 @@
 	<label class="col-xs-2 control-label" for="@inputName">@labelText</label>
 	<div class="col-xs-3">
 		<input type="@inputType" placeholder="@placeholder" class="form-control" name="@inputName" id="@inputName"
-			@{if (inputData.contains(inputName)) s"value=${inputData(inputName)}"}>
+			value="@(if (inputData.contains(inputName)) inputData(inputName))">
 		@defining(errors.filter(_.key == inputName).iterator) { i =>
 			@for(error <- i) {
 				<span class="help-block">@error.message@(if(i.hasNext) ", " else "")</span>

@@ -4,12 +4,16 @@ import scala.slick.driver.H2Driver.simple._
 import java.sql.Date
 import scala.slick.lifted
 
-class User(ltag: lifted.Tag) extends Table[(Long, Long, String, String)](ltag, "users") {
+class User(ltag: lifted.Tag) extends Table[(Long, Long, String, String, Boolean, String, Int, Int)](ltag, "users") {
   def id = column[Long]("id", O.PrimaryKey, O.AutoInc)
   def version = column[Long]("version", O.Default(0))
   def name = column[String]("name")
   def password = column[String]("password")
-  def * = (id, version, name, password)
+  def compactEntryList = column[Boolean]("compactEntryList", O.Default(false))
+  def dateFormat = column[String]("dateFormat", O.Default("dd MMM yyyy hh:mm:ss"))
+  def itemsOnPage = column[Int]("itmesOnPage", O.Default(SlickDao.defaultItemsOnPage))
+  def codeTheme = column[Int]("codeTheme")
+  def * = (id, version, name, password, compactEntryList, dateFormat, itemsOnPage, codeTheme)
   def nameUnique = index("user_name_idx", name, unique = true)
   def namePasswordIdx = index("user_name_password_idx", (name, password), unique = true)
 }
@@ -69,7 +73,11 @@ sealed abstract class Entity {
 }
 
 case class SlickUser(name: String,
-                     password: String) extends Entity with models.User {
+                     password: String,
+                     compactEntryList: Boolean,
+                     dateFormat: String,
+                     itemsOnPage: Int,
+                     codeTheme: Int) extends Entity with models.User {
   def entries: Seq[models.Entry] = SlickDao.getEntriesByUser(id)
   def comments: Seq[models.Comment] = SlickDao.getCommentsByUser(id)
   def favoriteTags: Seq[models.Tag] = SlickDao.getFavoriteTagsByUser(id)
@@ -96,8 +104,8 @@ case class SlickComment(authorId: Long,
 case class SlickTag(title: String) extends Entity with models.Tag
 
 object ModelConverter {
-  def getUser(t: (Long, Long, String, String)): SlickUser = {
-    val x = SlickUser(t._3, t._4)
+  def getUser(t: (Long, Long, String, String, Boolean, String, Int, Int)): SlickUser = {
+    val x = SlickUser(t._3, t._4, t._5, t._6, t._7, t._8)
     x.id = t._1
     x.version = t._2
     x

@@ -29,7 +29,7 @@ object SquerylDao extends Schema with Dao {
     def id = compositeKey(entryId, tagId)
   }
 
-  private def isEntryVisible(entry: Entry)(implicit user: Option[models.User]) =
+  private def isEntryVisible(entry: Entry, user: Option[models.User]) =
     entry.openForAll === true or entry.authorId === (user map (_.id) getOrElse -1L)
 
   private def getPagesNumber(size: Long, itemsOnPage: Long): Long = {
@@ -40,7 +40,10 @@ object SquerylDao extends Schema with Dao {
   on(users)(user => declare(
     user.id is (primaryKey, autoIncremented),
     columns(user.name, user.password) are indexed,
-    user.name is unique
+    user.name is unique,
+    user.compactEntryList defaultsTo false,
+    user.dateFormat defaultsTo "dd MMM yyyy hh:mm:ss",
+    user.itemsOnPage defaultsTo defaultItemsOnPage
   ))
 
   on(entries)(entry => declare(
@@ -90,7 +93,7 @@ object SquerylDao extends Schema with Dao {
     tag1.id = 1
     val tag2 = Tag("tag2")
     tag2.id = 2
-    val user1 = User("user1", "pass")
+    val user1 = User("user1", "pass", true, "dd MMM yyyy hh:mm:ss", 2, 1)
     user1.id = 1
     val entry1 = Entry(1, "entry1", "content1<br/>bla1", new Date, true)
     entry1.id = 1
@@ -142,12 +145,11 @@ object SquerylDao extends Schema with Dao {
   }
 
   def getEntries(user: Option[models.User], page: Int, itemsOnPage: Int): (Long, Seq[models.Entry]) = inTransaction {
-    implicit val impUser = user
     val size = from(entries)(entry =>
-      where(isEntryVisible(entry)) compute count
+      where(isEntryVisible(entry, user)) compute count
     ).single.measures
     val xs = from(entries)(entry =>
-      where(isEntryVisible(entry)) select entry
+      where(isEntryVisible(entry, user)) select entry
     ).page(page * itemsOnPage, itemsOnPage)
     (getPagesNumber(size, itemsOnPage), xs.toList)
   }
@@ -158,24 +160,22 @@ object SquerylDao extends Schema with Dao {
 
   def getEntriesByTag(user: Option[models.User], tag: models.Tag, page: Int,
                       itemsOnPage: Int): (Long, Seq[models.Entry]) = inTransaction {
-    implicit val impUser = user
     val size = from(entries, entryTag)((entry, et) =>
-      where(isEntryVisible(entry) and (entry.id === et.entryId) and (tag.id === et.tagId)) compute count
+      where(isEntryVisible(entry, user) and (entry.id === et.entryId) and (tag.id === et.tagId)) compute count
     ).single.measures
     val xs = from(entries, entryTag)((entry, et) =>
-      where(isEntryVisible(entry) and (entry.id === et.entryId) and (tag.id === et.tagId)) select entry
+      where(isEntryVisible(entry, user) and (entry.id === et.entryId) and (tag.id === et.tagId)) select entry
     ).page(page * itemsOnPage, itemsOnPage)
     (getPagesNumber(size, itemsOnPage), xs.toList)
   }
 
   def getEntriesBySearch(user: Option[models.User], query: String, page: Int,
                          itemsOnPage: Int): (Long, Seq[models.Entry]) = inTransaction {
-    implicit val impUser = user
     val size = from(entries)(entry =>
-      where(isEntryVisible(entry) and (entry.title like "%" + query + "%")) compute count
+      where(isEntryVisible(entry, user) and (entry.title like "%" + query + "%")) compute count
     ).single.measures
     val xs = from(entries)(entry =>
-      where(isEntryVisible(entry) and (entry.title like "%" + query + "%")) select entry
+      where(isEntryVisible(entry, user) and (entry.title like "%" + query + "%")) select entry
     ).page(page * itemsOnPage, itemsOnPage)
     (getPagesNumber(size, itemsOnPage), xs.toList)
   }
@@ -185,7 +185,7 @@ object SquerylDao extends Schema with Dao {
   }
 
   def addUser(name: String, password: String): models.User = inTransaction {
-    users.insert(User(name, password))
+    users.insert(User(name, password, false, "dd MMM yyyy hh:mm:ss", defaultItemsOnPage, 0))
   }
 
   def addEntry(author: models.User, title: String, tags: Seq[models.Tag], openForAll: Boolean,
@@ -241,10 +241,10 @@ object SquerylDao extends Schema with Dao {
     comments.deleteWhere(comment => comment.id === id and comment.authorId === user.map(_.id).getOrElse(-1L)) != 0
   }
 
-  def deleteUser(user: Option[models.User], id: Long): Boolean = inTransaction {
-    if (user.map(_.id).getOrElse(-1L) != id)
+  def deleteUser(user: Option[models.User]): Boolean = inTransaction {
+    if (!user.isDefined)
       return false
-    users.deleteWhere(u => u.id === id) != 0
+    users.deleteWhere(u => u.id === user.get.id) != 0
   }
 
   def addFavoriteTag(user: Option[models.User], title: String): Boolean = inTransaction {
@@ -261,5 +261,12 @@ object SquerylDao extends Schema with Dao {
     if (result)
       result = userFavoriteTag.deleteWhere(ut => ut.userId === user.get.id and ut.tagId === tag.get.id) != 0
     result
+  }
+
+  def updateUser(id: Long, password: String, compactEntryList: Boolean, dateFormat: String, itemsOnPage: Int,
+                 codeTheme: Int): Option[models.User] = inTransaction {
+    update(users)(user => where(user.id === id) set(user.password := password, user.compactEntryList := compactEntryList,
+      user.dateFormat := dateFormat, user.itemsOnPage := itemsOnPage, user.codeTheme := codeTheme))
+    getUser(id)
   }
 }

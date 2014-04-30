@@ -3,6 +3,10 @@
 	<h3>Tags:</h3>
 	@tagList(tags)
 	<h3>Entries:</h3>
-	@entryList(user, entries)
+	@if(user.isDefined && user.get.compactEntryList) {
+		@compactEntryList(user, entries)
+	} else {
+		@entryList(user, entries)
+	}
 	@navigation(currentPage, pagesNumber, "/search", parameters)
 }()

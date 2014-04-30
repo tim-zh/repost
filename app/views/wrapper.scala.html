@@ -11,7 +11,12 @@
 		<link rel="stylesheet" href="@routes.Assets.at("stylesheets/bootstrap-theme.min.css")">
 		<link rel="stylesheet" href="@routes.Assets.at("stylesheets/perfect-scrollbar.css")">
 		<link rel="stylesheet" href="@routes.Assets.at("stylesheets/jquery.sceditor.default.theme.min.css")">
-		<link rel="stylesheet" href="@routes.Assets.at("stylesheets/highlight/dark.css")">
+		@if(user.isDefined) {
+			<link rel="stylesheet" href="@routes.Assets.at("stylesheets/highlight/" +
+					Application.codeThemeMap(user.get.codeTheme) + ".css")">
+		} else {
+			<link rel="stylesheet" href="@routes.Assets.at("stylesheets/highlight/dark.css")">
+		}
 		<link rel="stylesheet" href="@routes.Assets.at("stylesheets/main.css")">
 
 		<script src="@routes.Assets.at("javascripts/jquery-1.11.0.min.js")"></script>
@@ -50,7 +55,7 @@
 					</div>
 				</div>
 			} else {
-				<form method="post" action="/auth" class="navbar-form navbar-right" role="form">
+				<form method="post" action="/auth" class="navbar-form navbar-right">
 					<div class="form-group input-group-sm">
 						<input type="text" placeholder="login" class="form-control" name="name">
 					</div>
@@ -81,11 +86,13 @@
 											<a href="/tag/@tag.title" id="favorite@tag.title"
 													class="list-group-item@(if (selectedTag.isDefined && selectedTag.get.id == tag.id) " active")">
 												@tag.title
-												<button type="button" class="btn btn-default btn-xs pull-right" id="removeFavorite@tag.title">remove</button>
+												<button type="button" class="btn btn-default btn-xs pull-right" id="removeFavorite@tag.title" tabindex="-1">
+													remove
+												</button>
 											</a>
 										}
 									</div>
-									<input type="text" placeholder="add" class="form-control list-group-item" id="favoriteTags">
+									<input type="text" placeholder="add" class="form-control list-group-item" id="favoriteTags" tabindex="-1">
 								</div>
 						</div>
 					</div>

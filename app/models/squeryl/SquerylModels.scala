@@ -11,7 +11,11 @@ sealed trait Entity {
 }
 
 case class User(name: String,
-                password: String) extends KeyedEntity[Long] with Entity with models.User {
+                password: String,
+                compactEntryList: Boolean,
+                dateFormat: String,
+                itemsOnPage: Int,
+                codeTheme: Int) extends KeyedEntity[Long] with Entity with models.User {
   lazy val _entries: OneToMany[Entry] = SquerylDao.userEntry.left(this)
   lazy val _comments: OneToMany[Comment] = SquerylDao.userComment.left(this)
   lazy val _favoriteTags = SquerylDao.userFavoriteTag.left(this)

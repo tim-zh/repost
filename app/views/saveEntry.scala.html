@@ -1,7 +1,7 @@
 @(user: Option[User], errors: Iterable[FormError] = Nil, entryData: Map[String, String] = Map.empty)
+@isUpdateMode = @{entryData.contains("id") && !entryData("id").isEmpty && entryData("id") != "-1"}
 @wrapper(user) {
-	<br/>
-	<form method="post" action="/entry/save" class="form-horizontal" role="form">
+	<form method="post" action="/entry/save" class="form-horizontal h5">
 		<input type="hidden" name="id" value="@entryData.get("id").getOrElse(-1)">
 		@renderInput(errors, entryData, "title", "title", "text", "title")()
 		@renderInput(errors, entryData, "tags", "tags", "text") {
@@ -41,7 +41,7 @@
 		</div>
 		<div class="form-group">
 			<div class="col-xs-offset-2 col-xs-9">
-				@if(entryData.contains("id") && !entryData("id").isEmpty && entryData("id") != "-1") {
+				@if(isUpdateMode) {
 					<button type="submit" class="btn btn-success btn-sm">update entry</button>
 					<button type="button" class="btn btn-danger btn-sm pull-right" id="deleteButton" tabindex="-1">delete entry</button>
 				} else {
@@ -55,7 +55,7 @@
 	<script>
 		$('#cancelButton').click(function() {window.location='/';});
 
-		@if(entryData.contains("id") && !entryData("id").isEmpty && entryData("id") != "-1") {
+		@if(isUpdateMode) {
 			$('#deleteButton').click(function() {
 				$.post('/entry/delete', {id: @entryData("id")}, function(response) {
 					if ("true" === response)

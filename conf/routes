@@ -25,6 +25,7 @@ POST        /comment/save                  controllers.Application.saveComment()
 POST        /comment/delete                controllers.Application.deleteComment()
 
 GET         /user/$id<\d+>                 controllers.Application.user(id: Long)
+POST        /user/save                     controllers.Application.saveUser()
 POST        /user/delete                   controllers.Application.deleteUser()
 
 POST        /favorite/add/:title           controllers.Application.addFavoriteTag(title: String)

@@ -1,12 +1,55 @@
-@(currentUser: Option[User], user: User)
+@(currentUser: Option[User], user: User, errors: Iterable[FormError] = Nil, entryData: Map[String, String] = Map.empty)
+@isUserDefined = @{currentUser.isDefined && currentUser.get.id == user.id}
 @wrapper(currentUser, user.name) {
-	@if(currentUser.isDefined && currentUser.get.id == user.id) {
-		<h1>Hi, @user.name</h1>
-		<form method="post" action="/user/delete">
-			<input type="hidden" name="id" value="@user.id">
-			<button type="submit" class="btn btn-danger btn-sm" id="deleteButton">delete user</button>
+	@if(isUserDefined) {
+		<h1 class="col-xs-offset-2">Hi, @user.name</h1>
+		<form method="post" action="/user/save" class="form-horizontal h5">
+			@renderInput(errors, entryData, "old password", "oldPass", "password")()
+			@renderInput(errors, entryData, "new password", "newPass", "password")()
+			@renderInput(errors, entryData, "retype new password", "newPass2", "password")()
+			<div class="form-group">
+				<label class="col-xs-offset-2 col-xs-4" for="compactEntryList">
+					<input type="checkbox" name="compactEntryList" id="compactEntryList" value=true
+						@(if (entryData.contains("compactEntryList") && entryData("compactEntryList") == "true") "checked")>
+					compact entry list
+				</label>
+			</div>
+			@renderInput(errors, entryData, "date format", "dateFormat", "text")()
+			@renderInput(errors, entryData, "number of entries per page", "itemsOnPage", "number")()
+			<div class="form-group@(if(errors.exists(_.key == "codeTheme")) " has-error")">
+				<label class="col-xs-2 control-label" for="codeTheme">code highlight theme</label>
+				<div class="col-xs-3">
+					<select name="codeTheme" id="codeTheme" class="form-control">
+					@for((i, text) <- Application.codeThemeMap) {
+						<option@(if(entryData.contains("codeTheme") && entryData("codeTheme") == i.toString) " selected") value="@i">
+							@text
+						</option>
+					}
+					</select>
+				</div>
+			</div>
+			<div class="form-group">
+				<div class="col-xs-offset-2 col-xs-3">
+					<button type="submit" class="btn btn-success btn-sm">update user</button>
+					<button type="button" class="btn btn-default btn-sm" id="cancelButton">cancel</button>
+					<button type="button" class="btn btn-danger btn-sm pull-right" id="deleteButton" tabindex="-1">delete user</button>
+				</div>
+			</div>
 		</form>
 	} else {
 		<h2>It is @user.name</h2>
 	}
-}()
+} {
+	@if(isUserDefined) {
+		<script>
+			$('#cancelButton').click(function() {window.location='/';});
+
+			$('#deleteButton').click(function() {
+				$.post('/user/delete', null, function(response) {
+					if ("true" === response)
+						window.location = '/';
+				});
+			});
+		</script>
+	}
+}
