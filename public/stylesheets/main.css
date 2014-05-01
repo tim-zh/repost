@@ -62,3 +62,7 @@ body {
 .favorite-list .form-control {
     height: auto;
 }
+
+.navbar-form[action="/search"] {
+    width: 250px;
+}
