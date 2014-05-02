@@ -12,11 +12,19 @@
 			}
 			div {
 				position: relative;
-				top: 50%;
+				top: 35%;
 			}
 		</style>
 	</head>
 	<body>
-		<div>Your page is in another castle.</div>
+		<div id="c"></div>
+		<script>
+			document.getElementById('c').innerHTML = [
+				'Your page is in another castle',
+				'Never gonna give you up<br/>Never gonna let you down<br/>Never gonna run around and desert you',
+				'ಠ_ಠ',
+				'♔<br/>KEEP<br/>CALM<br/>and<br/>CARRY<br/>ON'
+			][Math.floor(Math.random() * 4)]
+		</script>
 	</body>
 </html>
