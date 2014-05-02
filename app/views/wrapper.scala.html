@@ -10,7 +10,6 @@
 		<link rel="stylesheet" href="@routes.Assets.at("stylesheets/bootstrap.min.css")">
 		<link rel="stylesheet" href="@routes.Assets.at("stylesheets/bootstrap-theme.min.css")">
 		<link rel="stylesheet" href="@routes.Assets.at("stylesheets/perfect-scrollbar.css")">
-		<link rel="stylesheet" href="@routes.Assets.at("stylesheets/jquery.sceditor.default.theme.min.css")">
 		@if(user.isDefined) {
 			<link rel="stylesheet" href="@routes.Assets.at("stylesheets/highlight/" +
 					Application.codeThemeMap(user.get.codeTheme) + ".css")">
@@ -102,7 +101,7 @@
 		<script src="@routes.Assets.at("javascripts/perfect-scrollbar-0.4.9.with-mousewheel.min.js")"></script>
 		<script src="@routes.Assets.at("javascripts/jquery.color-2.1.2.min.js")"></script>
 		<script src="@routes.Assets.at("javascripts/jquery.autocomplete.min.js")"></script>
-		<script src="@routes.Assets.at("javascripts/jquery.sceditor.bbcode.min.js")"></script>
+		<script src="@routes.Assets.at("javascripts/micro-editor.js")"></script>
 		<script src="@routes.Assets.at("javascripts/highlight.pack.js")"></script>
 		<script>
 			$('#pageScroll').perfectScrollbar();

@@ -32,12 +32,17 @@
 		<div class="form-group@(if (errors.exists(_.key == "content")) " has-error")">
 			<label for="content" class="col-xs-2 control-label">content</label>
 			<div class="col-xs-9">
-				<textarea class="form-control" name="content" id="content" rows="15"></textarea>
-				@defining(errors.filter(_.key == "content").iterator) { i =>
-					@for(error <- i) {
-						<span class="help-block">@error.message@(if(i.hasNext) ", " else "")</span>
-					}
-				}
+				<div class="panel panel-default bbcode-panel">
+					<div class="panel-heading" id="buttonsContainer"></div>
+					<div class="panel-body">
+						<textarea class="form-control" name="content" id="content" rows="15"></textarea>
+						@defining(errors.filter(_.key == "content").iterator) { i =>
+							@for(error <- i) {
+								<span class="help-block">@error.message@(if(i.hasNext) ", " else "")</span>
+							}
+						}
+					</div>
+				</div>
 			</div>
 		</div>
 		<div class="form-group">
@@ -108,7 +113,7 @@
 
 		var contentTextArea = $('#content');
 		@if(entryData.contains("content") && !entryData("id").isEmpty && entryData("id") != "-1") {
-			var text = '@Html(entryData("content"))';
+			var text = "@Html(entryData("content").replace("\"", "'"))";
 			[
 				[/<br\/>/g, '\r\n'],
 				[/<strong>([\s\S]+?)<\/strong>/g, '[b]$1[/b]'],
@@ -116,22 +121,36 @@
 				[/<u>([\s\S]+?)<\/u>/g, '[u]$1[/u]'],
 				[/<s>([\s\S]+?)<\/s>/g, '[s]$1[/s]'],
 				[/<font size=(\d+?)>([\s\S]+?)<\/font>/g, '[size=$1]$2[/size]'],
-				[/<a href='([\s\S]+?)'>([\s\S]+?)<\/a>/g, '[url=$1]$2[/url]'],
-				[/<img src='([\s\S]+?)'\/>/g, '[img]$1[/img]'],
-				[/<img width='(\d+?)' height='(\d+?)' src='([\s\S]+?)'\/>/g, '[img=$1,$2]$3[/]'],
+				[/<a href='(\S+?)'>([\s\S]+?)<\/a>/g, '[url=$1]$2[/url]'],
+				[/<img src='(\S+?)'\/>/g, '[img]$1[/img]'],
+				[/<img width='(\d*?)' height='(\d*?)' src='(\S+?)'\/>/g, '[img=$1,$2]$3[/img]'],
 				[/<blockquote>([\s\S]+?)<\/blockquote>/g, '[quote]$1[/quote]'],
 				[/<ol>([\s\S]+?)<\/ol>/g, '[ol]$1[/ol]'],
 				[/<li>([\s\S]+?)<\/li>/g, '[li]$1[/li]'],
 				[/<div align='center'>([\s\S]+?)<\/div>/g, '[center]$1[/center]'],
-				[/<pre><code>([\s\S]+?)<\/code><\/pre>/g, '[code]$1[/code]'],
+				[/<pre><code class='(\S*?)'>([\s\S]+?)<\/code><\/pre>/g, '[code=$1]$2[/code]'],
 				[/<p>([\s\S]+?)<\/p>/g, '[p]$1[/p]']
 			].forEach(function(pair) {text = text.replace(pair[0], pair[1])});
 			contentTextArea.val(text);
 		}
-		contentTextArea.sceditor({
-			plugins: 'bbcode',
-			toolbar: 'bold,italic,underline,strike,size|removeformat|link,image|quote,orderedlist,code,center|date,time|maximize,source',
-			style: '@routes.Assets.at("stylesheets/jquery.sceditor.default.min.css")'
+		microEditor(contentTextArea[0], $('#buttonsContainer')[0], {
+			buttons: 'bold,italic,underline,strike,size,link,image,quote,list,hlCode,center,paragraph,preview',
+			customButtons: {
+				hlCode: ['code', '', '', '', function(text, selectionStart, selectionEnd) {
+					var openTag = '[code=lang-' + prompt('choose language: clojure, coffeescript, cpp, cs, css, go, haskell, ' +
+						'java, javascript, lua, php, python, ruby, scala, sql, xml') + ']';
+					var result = insertInString(text, openTag, selectionStart);
+					result = insertInString(result, '[/code]', selectionEnd + openTag.length);
+					return result;
+				}]
+			},
+			customPreviewReplaces: [[/\[code=(\S*?)\]([\s\S]+?)\[\/code\]/g, '<pre><code class="$1">$2</code></pre>']],
+			onPreview: function(previewContainer) {
+				var temp = [];
+				var nodeList = previewContainer.getElementsByTagName('pre');
+				for(var i = 0, n; n = nodeList[i]; ++i) temp.push(n);
+				temp.forEach(function(e) {hljs.highlightBlock(e)});
+			}
 		});
 
 		var quickImageUrl = $('#quickImageUrl');
@@ -144,7 +163,8 @@
 			uploadButton.text("loading");
 			$.get('/image/fromUrl', {url: quickImageUrl.val()}, function(response) {
 				if (response) {
-					contentTextArea.sceditor('instance').insert('[img]' + response + '[/img]');
+					contentTextArea[0].value = insertInString(contentTextArea[0].value, '[img]' + response + '[/img]',
+						contentTextArea[0].selectionEnd);
 					quickImageUrl.val("");
 				}
 				uploadButton.text("upload");
@@ -175,7 +195,8 @@
 				contentType: 'multipart/form-data',
 				success: function(response) {
 					if (response) {
-						contentTextArea.sceditor('instance').insert('[img]' + response + '[/img]');
+						contentTextArea[0].value = insertInString(contentTextArea[0].value, '[img]' + response + '[/img]',
+							contentTextArea[0].selectionEnd);
 						quickImageFile.val("");
 					}
 					uploadButton.text("upload");

@@ -46,10 +46,6 @@ body {
 	color: #3399FF;
 }
 
-.sceditor-toolbar * {
-    box-sizing: content-box;
-}
-
 .form-control-xs {
 	height: 100%;
 	padding: 2px 4px;
@@ -65,4 +61,17 @@ body {
 
 .navbar-form[action="/search"] {
     width: 250px;
+}
+
+.bbcode-panel .panel-body {
+    padding: 0;
+}
+
+.bbcode-panel textarea {
+    border-radius: 0;
+    border-width: 0;
+}
+
+.bbcode-panel .panel-heading > * {
+    margin-right: 4px;
 }

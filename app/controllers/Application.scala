@@ -128,7 +128,7 @@ object Application extends Controller {
                   case Some(x) =>
                     dao.updateEntry(Some(user), entryData.id, entryData.title, tags, entryData.openForAll,
                       getHtmlFromBbCodeAndEscape(entryData.content))
-                    Redirect("/")
+                    Ok(views.html.entry(Some(user), x))
                   case None =>
                     Redirect("/")
                 }
@@ -349,16 +349,16 @@ object Application extends Controller {
     bbMap.put("""\[i\]([\s\S]+?)\[/i\]""", "<i>$1</i>")
     bbMap.put("""\[u\]([\s\S]+?)\[/u\]""", "<u>$1</u>")
     bbMap.put("""\[s\]([\s\S]+?)\[/s\]""", "<s>$1</s>")
-    bbMap.put("""\[size=([\s\S]+?)\]([\s\S]+?)\[/size\]""", "<font size=$1>$2</font>")
-    bbMap.put("""\[url\]([\s\S]+?)\[/url\]""", "<a href='$1'>$1</a>")
-    bbMap.put("""\[url=([\s\S]+?)\]([\s\S]+?)\[/url\]""", "<a href='$1'>$2</a>")
-    bbMap.put("""\[img\]([\s\S]+?)\[/img\]""", "<img src='$1'/>")
-    bbMap.put("""\[img=([\s\S]+?),([\s\S]+?)\]([\s\S]+?)\[/img\]""", "<img width='$1' height='$2' src='$3'/>")
+    bbMap.put("""\[size=(\S+?)\]([\s\S]+?)\[/size\]""", "<font size=$1>$2</font>")
+    bbMap.put("""\[url\](\S+?)\[/url\]""", "<a href='$1'>$1</a>")
+    bbMap.put("""\[url=(\S+?)\]([\s\S]+?)\[/url\]""", "<a href='$1'>$2</a>")
+    bbMap.put("""\[img\](\S+?)\[/img\]""", "<img src='$1'/>")
+    bbMap.put("""\[img=(\d*?),(\d*?)\](\S+?)\[/img\]""", "<img width='$1' height='$2' src='$3'/>")
     bbMap.put("""\[quote\]([\s\S]+?)\[/quote\]""", "<blockquote>$1</blockquote>")
     bbMap.put("""\[ol\]([\s\S]+?)\[/ol\]""", "<ol>$1</ol>")
     bbMap.put("""\[li\]([\s\S]+?)\[/li\]""", "<li>$1</li>")
     bbMap.put("""\[center\]([\s\S]+?)\[/center\]""", "<div align='center'>$1</div>")
-    bbMap.put("""\[code\]([\s\S]+?)\[/code\]""", "<pre><code>$1</code></pre>")
+    bbMap.put("""\[code=(\S*?)\]([\s\S]+?)\[/code\]""", "<pre><code class='$1'>$2</code></pre>")
     bbMap.put("""\[p\]([\s\S]+?)\[/p\]""", "<p>$1</p>")
 
     escapeMap.foreach(entry => html = html.replaceAll(entry._1, entry._2))

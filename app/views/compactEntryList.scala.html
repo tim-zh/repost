@@ -4,8 +4,8 @@
 	<tr>
 		<td>
 		@if(user.isDefined && user.get.id == entry.author.id) {
-			<a href="/entry/save/@entry.id" class="btn btn-primary btn-xs">update</a>
 			<button type="button" class="btn btn-danger btn-xs" id="deleteButton@entry.id">delete</button>
+			<a href="/entry/save/@entry.id" class="btn btn-primary btn-xs">update</a>
 			<script>
 				$('#deleteButton@entry.id').click(function() {
 					$.post('/entry/delete', {id: @entry.id}, function(response) {

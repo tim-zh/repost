@@ -1,8 +1,12 @@
-@(user: Option[User], entry: Entry, commentId: Long)
+@(user: Option[User], entry: Entry, commentId: Long = -1)
 @wrapper(user, entry.title) {
 	<h2>@entry.title</h2>
 	<h5>
-		by <a href="/user/@entry.author.id">@entry.author.name</a>
+		@if(user.isDefined && user.get.id == entry.author.id) {
+			<a href="/entry/save/@entry.id" class="btn btn-primary btn-xs">update</a>
+		} else {
+			by <a href="/user/@entry.author.id">@entry.author.name</a>
+		}
 		(@entry.date.format(if (user.isDefined) user.get.dateFormat else "dd MMM yyyy hh:mm:ss"))
 	</h5>
 	<small>@tagList(entry.tags)</small>
@@ -12,8 +16,11 @@
 	@if(user.isDefined) {
 		<form method="post" action="/comment/save" id="commentForm">
 			<input type="hidden" name="entryId" value="@entry.id">
-			<div id="expanderContent" style="display:none">
-				<textarea class="form-control" name="content" id="content" rows="8"></textarea>
+			<div id="expanderContent" class="panel panel-default bbcode-panel" style="display:none">
+				<div class="panel-heading" id="buttonsContainer"></div>
+				<div class="panel-body">
+					<textarea class="form-control" name="content" id="content" rows="8"></textarea>
+				</div>
 			</div>
 			<h5><button id="addComment" type="button" class="btn btn-sm btn-success">add comment</button></h5>
 		</form>
@@ -28,11 +35,26 @@
 			else {
 				isCommentFormExpanded = true;
 				$('#expanderContent').animate({height: 'toggle', opacity: 'toggle'});
-				$('#content').focus();
-				$('#content').sceditor({
-					plugins: 'bbcode',
-					toolbar: 'bold,italic,underline,strike,size|removeformat|link,image|quote,orderedlist,code,center|date,time|maximize,source',
-					style: '@routes.Assets.at("stylesheets/jquery.sceditor.default.min.css")'
+				var contentTextArea = $('#content');
+				contentTextArea.focus();
+				microEditor(contentTextArea[0], $('#buttonsContainer')[0], {
+					buttons: 'bold,italic,underline,strike,size,link,image,quote,list,hlCode,center,paragraph,preview',
+					customButtons: {
+						hlCode: ['code', '', '', '', function(text, selectionStart, selectionEnd) {
+							var openTag = '[code=lang-' + prompt('choose language: clojure, coffeescript, cpp, cs, css, go, haskell, ' +
+								'java, javascript, lua, php, python, ruby, scala, sql, xml') + ']';
+							var result = insertInString(text, openTag, selectionStart);
+							result = insertInString(result, '[/code]', selectionEnd + openTag.length);
+							return result;
+						}]
+					},
+					customPreviewReplaces: [[/\[code=(\S*?)\]([\s\S]+?)\[\/code\]/g, '<pre><code class="$1">$2</code></pre>']],
+					onPreview: function(previewContainer) {
+						var temp = [];
+						var nodeList = previewContainer.getElementsByTagName('pre');
+						for(var i = 0, n; n = nodeList[i]; ++i) temp.push(n);
+						temp.forEach(function(e) {hljs.highlightBlock(e)});
+					}
 				});
 			}
 		});
@@ -45,7 +67,7 @@
 			});
 		}
 		var comment = $('#comment@commentId');
-		if (comment) {
+		if (comment.length) {
 			comment.css('backgroundColor', '#9fff9f');
 			$('html, body').animate({scrollTop: comment.offset().top}, 1000, 'swing', function() {
 				comment.animate({backgroundColor: '#ffffff'}, 200, 'linear');
