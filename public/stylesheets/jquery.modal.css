@@ -13,44 +13,32 @@
   top: 20%;
   left: 50%;
   right: 50%;
-  width: 620px;
-  margin: 0 -320px;
+  width: 400px;
+  text-align: center;
+  overflow: auto;
+  bottom: auto;
+  margin: 0 -200px;
   z-index: 4000;
   opacity: 1;
   filter: alpha(opacity=100);
-  box-shadow: 0 2px 8px black; }
-  .modal.fade {
-    top: -20%;
-    opacity: 0;
-    filter: alpha(opacity=0); }
-  .modal .header, .modal .footer, .modal .body {
-    padding: 10px; }
-    .modal .header:before, .modal .header:after, .modal .footer:before, .modal .footer:after, .modal .body:before, .modal .body:after {
-      content: " ";
-      display: table;
-      clear: both; }
-  .modal .header *, .modal .footer * {
-    margin: 0; }
-  .modal .body {
-    min-height: 240px;
-    max-height: 480px;
-    overflow: auto; }
-  .modal .header {
-    border-bottom: 1px solid #eeeeee; }
-  .modal .footer {
-    border-top: 1px solid #eeeeee; }
-  .modal .close {
-    color: gray;
-    float: right;
-    display: block;
-    cursor: pointer;
-    width: 20px;
-    height: 20px;
-    display: block;
-    font-size: 20px;
-    font-weight: bold;
-    line-height: 20px;
-    text-align: center; }
+  box-shadow: 0 2px 8px black;
+}
+
+.modal.fade {
+  top: -20%;
+  opacity: 0;
+  filter: alpha(opacity=0);
+}
+
+.modal .body {
+    padding: 10px 10px 30px;
+}
+
+.modal .body:before, .modal .body:after {
+  content: " ";
+  display: table;
+  clear: both;
+}
 
 .vignette {
   position: fixed;
@@ -63,7 +51,10 @@
   background: black;
   z-index: 2000;
   opacity: 0.8;
-  filter: alpha(opacity=80); }
-  .vignette.fade {
-    opacity: 0;
-    filter: alpha(opacity=0); }
+  filter: alpha(opacity=80);
+}
+
+.vignette.fade {
+  opacity: 0;
+  filter: alpha(opacity=0);
+}
