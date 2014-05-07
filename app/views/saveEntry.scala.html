@@ -57,16 +57,14 @@
 			</div>
 		</div>
 	</form>
+	@deletionModal("/entry/delete", "{id: " + entryData("id") + "}")
 } {
 	<script>
 		$('#cancelButton').click(function() {window.location='/';});
 
 		@if(isUpdateMode) {
 			$('#deleteButton').click(function() {
-				$.post('/entry/delete', {id: @entryData("id")}, function(response) {
-					if ("true" === response)
-						window.location = '/';
-				});
+				$('#modalDelete').modal();
 			});
 		}
 

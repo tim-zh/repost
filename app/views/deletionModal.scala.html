@@ -1,0 +1,42 @@
+@(deleteUrl: String, data: String)
+<div class="modal" id="modalDelete">
+	<div class="body">
+		<div id="confirmStage">
+			<h2>are you sure?</h2>
+			<button type="button" class="btn btn-danger btn-lg" id="modalDeleteButton">delete</button>
+			<a class="btn btn-default btn-lg" data-dismiss='modal'>cancel</a>
+		</div>
+		<div id="waitStage">
+			deleting...
+		</div>
+		<div id="successStage">
+			<h2>deleted</h2>
+			<button type="button" class="btn btn-default btn-lg" id="modalSuccessButton">ok</button>
+		</div>
+		<div id="failureStage">
+			<h2>failure</h2>
+			<button type="button" class="btn btn-default btn-lg" id="modalSuccessButton">ok</button>
+		</div>
+	</div>
+</div>
+<script>
+	var setStage = function(stage) {
+		$('#confirmStage')[0].style.display = stage =='confirm' ? 'block' : 'none';
+		$('#waitStage')[0].style.display = stage =='wait' ? 'block' : 'none';
+		$('#successStage')[0].style.display = stage =='success' ? 'block' : 'none';
+		$('#failureStage')[0].style.display = stage =='failure' ? 'block' : 'none';
+	};
+	setStage('confirm');
+	$('#modalDeleteButton').click(function() {
+		setStage('wait');
+		$.post('@Html(deleteUrl)', @Html(data), function(response) {
+			if ("true" === response)
+				setStage('success');
+			else
+				setStage('failure');
+		});
+	});
+	$('#modalSuccessButton').click(function() {
+		window.location = '/';
+	});
+</script>

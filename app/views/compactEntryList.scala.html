@@ -1,4 +1,7 @@
 @(user: Option[User], entries: Iterable[Entry])
+<script>
+	var entryId = -1;
+</script>
 <table class="table table-striped table-hover" style="width: auto">
 @for(entry <- entries) {
 	<tr>
@@ -8,11 +11,9 @@
 			<a href="/entry/save/@entry.id" class="btn btn-primary btn-xs">update</a>
 			<script>
 				$('#deleteButton@entry.id').click(function() {
-					$.post('/entry/delete', {id: @entry.id}, function(response) {
-						if ("true" === response)
-							window.location = '/';
-					});
-				});
+					entryId = @entry.id;
+					$('#modalDelete').modal();
+				})
 			</script>
 		} else {
 			<a href="/user/@entry.author.id">@entry.author.name</a>
@@ -23,3 +24,4 @@
 	</tr>
 }
 </table>
+@deletionModal("/entry/delete", "{id: entryId}")

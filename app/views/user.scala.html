@@ -36,6 +36,7 @@
 				</div>
 			</div>
 		</form>
+		@deletionModal("/user/delete", "null")
 	} else {
 		<h2>It is @user.name</h2>
 	}
@@ -45,10 +46,7 @@
 			$('#cancelButton').click(function() {window.location='/';});
 
 			$('#deleteButton').click(function() {
-				$.post('/user/delete', null, function(response) {
-					if ("true" === response)
-						window.location = '/';
-				});
+				$('#modalDelete').modal();
 			});
 		</script>
 	}
