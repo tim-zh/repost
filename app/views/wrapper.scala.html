@@ -12,7 +12,7 @@
 		<link rel="stylesheet" href="@routes.Assets.at("stylesheets/perfect-scrollbar.css")">
 		@if(user.isDefined) {
 			<link rel="stylesheet" href="@routes.Assets.at("stylesheets/highlight/" +
-					Application.codeThemeMap(user.get.codeTheme) + ".css")">
+					controllers.codeThemeMap(user.get.codeTheme) + ".css")">
 		} else {
 			<link rel="stylesheet" href="@routes.Assets.at("stylesheets/highlight/dark.css")">
 		}
