@@ -12,7 +12,7 @@ class User(ltag: lifted.Tag) extends Table[(Long, Long, String, String, Boolean,
   def compactEntryList = column[Boolean]("compactEntryList", O.Default(false))
   def dateFormat = column[String]("dateFormat", O.Default("dd MMM yyyy hh:mm:ss"))
   def itemsOnPage = column[Int]("itmesOnPage", O.Default(SlickDao.defaultItemsOnPage))
-  def codeTheme = column[Int]("codeTheme")
+  def codeTheme = column[Int]("codeTheme", O.Default(0))
   def * = (id, version, name, password, compactEntryList, dateFormat, itemsOnPage, codeTheme)
   def nameUnique = index("user_name_idx", name, unique = true)
   def namePasswordIdx = index("user_name_password_idx", (name, password), unique = true)

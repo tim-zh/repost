@@ -8,8 +8,9 @@ POST        /$page<\d+>                    controllers.Application.index(page: I
 GET         /                              controllers.Application.index(page: Int = 0)
 POST        /                              controllers.Application.index(page: Int = 0)
 
-GET         /search/:page                  controllers.Application.search(page: Int, query: String ?= "")
-GET         /search                        controllers.Application.search(page: Int = 0, query: String ?= "")
+GET         /search/:page                  controllers.Application.search(page: Int)
+GET         /search                        controllers.Application.search(page: Int = 0)
+GET         /searchForm                    controllers.Application.searchForm()
 
 GET         /tag/:title/:page              controllers.Application.tag(title: String, page: Int)
 GET         /tag/:title                    controllers.Application.tag(title: String, page: Int = 0)
@@ -27,6 +28,7 @@ POST        /comment/delete                controllers.Application.deleteComment
 GET         /user/$id<\d+>                 controllers.Application.user(id: Long)
 POST        /user/save                     controllers.Application.saveUser()
 POST        /user/delete                   controllers.Application.deleteUser()
+GET         /users                         controllers.Application.users(query: String ?= "")
 
 POST        /favorite/add/:title           controllers.Application.addFavoriteTag(title: String)
 POST        /favorite/remove/:title        controllers.Application.removeFavoriteTag(title: String)

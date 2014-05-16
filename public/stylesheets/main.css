@@ -60,7 +60,7 @@ body {
 }
 
 .navbar-form[action="/search"] {
-    width: 250px;
+    width: 300px;
 }
 
 .bbcode-panel .panel-body {
@@ -72,6 +72,10 @@ body {
     border-width: 0;
 }
 
-.bbcode-panel .panel-heading > * {
+.microEditor-button {
     margin-right: 4px;
+}
+
+.microEditor-buttonGroup {
+    padding-right: 8px;
 }

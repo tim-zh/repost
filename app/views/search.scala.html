@@ -1,12 +1,16 @@
 @(user: Option[User], currentPage: Int, pagesNumber: Long, entries: Iterable[Entry], tags: Iterable[Tag], parameters: String = "")
 @wrapper(user) {
-	<h3>Tags:</h3>
-	@tagList(tags)
-	<h3>Entries:</h3>
-	@if(user.isDefined && user.get.compactEntryList) {
-		@compactEntryList(user, entries)
-	} else {
-		@entryList(user, entries)
+	@if(!tags.isEmpty) {
+		<h3>Tags:</h3>
+		@tagList(tags)
 	}
-	@navigation(currentPage, pagesNumber, "/search", parameters)
+	@if(!entries.isEmpty) {
+		<h3>Entries:</h3>
+		@if(user.isDefined && user.get.compactEntryList) {
+			@compactEntryList(user, entries)
+		} else {
+			@entryList(user, entries)
+		}
+		@navigation(currentPage, pagesNumber, "/search", parameters)
+	}
 }()

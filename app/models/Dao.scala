@@ -1,8 +1,10 @@
 package models
 
+import java.util.Date
+
 trait Dao {
   val defaultItemsOnPage = 10
-  val numberOfTagsBySearch = 5
+  val rowNumberInPopupSearch = 5
 
   def getUser(name: String, password: String): Option[User]
 
@@ -18,6 +20,9 @@ trait Dao {
 
   def getEntriesBySearch(user: Option[User], query: String, page: Int, itemsOnPage: Int): (Long, Seq[Entry])
 
+  def getEntriesBySearch(user: Option[User], query: String, from: Option[Date], to: Option[Date],
+                         users: Seq[User], tags: Seq[Tag], page: Int, itemsOnPage: Int): (Long, Seq[Entry])
+
   def getEntry(user: Option[User], id: Long): Option[Entry]
 
   def addUser(name: String, password: String): User
@@ -27,6 +32,10 @@ trait Dao {
   def getTagsByTitles(titles: Seq[String], addNew: Boolean): Seq[Tag]
 
   def getTagsBySearch(query: String): Seq[Tag]
+
+  def getUsersByNames(names: Seq[String]): Seq[User]
+
+  def getUsersBySearch(query: String): Seq[User]
 
   def addComment(author: User, entry: Entry, content: String): Comment
 

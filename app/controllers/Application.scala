@@ -3,7 +3,6 @@ package controllers
 import com.ning.http.util.AsyncHttpProviderUtils
 import java.io._
 import java.util.UUID
-import models.User
 import play.api.data._
 import play.api.data.Forms._
 import play.api.libs.json.Json
@@ -67,15 +66,41 @@ object Application extends Controller {
     )
   }
 
-  def search(page: Int, query: String) = Action { implicit req =>
-    if (query.isEmpty)
-      Redirect("/")
-    else {
-      val user = getUserFromSession
-      val (pagesNumber, entries) = dao.getEntriesBySearch(user, query, page, getItemsOnPage(user))
-      val tags = dao.getTagsBySearch(query)
-      Ok(views.html.search(user, page, pagesNumber, entries, tags, "?query=" + query))
-    }
+  def search(page: Int) = Action { implicit req =>
+    val user = getUserFromSession
+    val searchForm = Form(mapping("query" -> text,
+                                  "isEntries" -> boolean,
+                                  "isTags" -> boolean,
+                                  "from" -> optional(date),
+                                  "to" -> optional(date),
+                                  "users" -> text,
+                                  "tags" -> text)(SearchData.apply)(SearchData.unapply))
+    searchForm.bindFromRequest.fold(
+      badForm => {
+        if (badForm.data.contains("query")) {
+          val query = badForm.data("query")
+          val (pagesNumber, entries) = dao.getEntriesBySearch(user, query, page, getItemsOnPage(user))
+          val tags = dao.getTagsBySearch(query)
+          Ok(views.html.search(user, page, pagesNumber, entries, tags, "?query=" + query))
+        } else
+          Ok(views.html.searchForm(user))
+      },
+      searchData => {
+        val tags = if (searchData.isTags) dao.getTagsBySearch(searchData.query) else Nil
+        val (pagesNumber, entries) = if (searchData.isEntries) {
+          val usersFromString = dao.getUsersByNames(getSafeSeqFromString(searchData.users))
+          val tagsFromString = dao.getTagsByTitles(getSafeSeqFromString(searchData.tags), addNew = false)
+          dao.getEntriesBySearch(user, searchData.query, searchData.from, searchData.to,
+            usersFromString, tagsFromString, page, getItemsOnPage(user))
+        } else
+          (0L, Nil)
+        Ok(views.html.search(user, page, pagesNumber, entries, tags, "?" + searchData.toUrlString))
+      })
+  }
+
+  def searchForm() = Action { implicit req =>
+    val user = getUserFromSession
+    Ok(views.html.searchForm(user))
   }
 
   def tag(title: String, page: Int) = Action { implicit req =>
@@ -91,6 +116,13 @@ object Application extends Controller {
   def tags(query: String) = Action { implicit req =>
     val tags = dao.getTagsBySearch(query)
     val response = Json.obj("suggestions" -> tags.map(tag => Json.obj("value" -> tag.title)))
+    Ok(response)
+  }
+
+  //ajax call from search form
+  def users(query: String) = Action { implicit req =>
+    val users = dao.getUsersBySearch(query)
+    val response = Json.obj("suggestions" -> users.map(user => Json.obj("value" -> user.name)))
     Ok(response)
   }
 
@@ -113,9 +145,7 @@ object Application extends Controller {
             badForm =>
               Ok(views.html.saveEntry(Some(user), if (req.method == "POST") badForm.errors else Nil, badForm.data)),
             entryData => {
-              val tags = dao.getTagsByTitles(
-                titles = entryData.tags.split(",").filter("""^[\w \-]+$""".r.findFirstIn(_).isDefined),
-                addNew = true)
+              val tags = dao.getTagsByTitles(getSafeSeqFromString(entryData.tags), addNew = true)
               if (entryData.id == -1) {
                 val newEntry = dao.addEntry(user, entryData.title, tags, entryData.openForAll,
                   getHtmlFromBbCodeAndEscape(entryData.content))

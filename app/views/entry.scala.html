@@ -38,7 +38,7 @@
 				var contentTextArea = $('#content');
 				contentTextArea.focus();
 				microEditor(contentTextArea[0], $('#buttonsContainer')[0], {
-					buttons: 'bold,italic,underline,strike,size,link,image,quote,list,hlCode,center,paragraph,preview',
+					buttons: 'bold,italic,underline,strike,size|link,image|quote,list,hlCode|center,paragraph|preview',
 					customButtons: {
 						hlCode: ['code', '', '', '', function(text, selectionStart, selectionEnd) {
 							var openTag = '[code=lang-' + prompt('choose language: clojure, coffeescript, cpp, cs, css, go, haskell, ' +

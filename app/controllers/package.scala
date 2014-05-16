@@ -37,7 +37,7 @@ package object controllers {
     bbMap.put("""\[i\]([\s\S]+?)\[/i\]""", "<i>$1</i>")
     bbMap.put("""\[u\]([\s\S]+?)\[/u\]""", "<u>$1</u>")
     bbMap.put("""\[s\]([\s\S]+?)\[/s\]""", "<s>$1</s>")
-    bbMap.put("""\[size=(\S+?)\]([\s\S]+?)\[/size\]""", "<font size=$1>$2</font>")
+    bbMap.put("""\[size=(\S+?)\]([\s\S]+?)\[/size\]""", "<span size=$1>$2</span>")
     bbMap.put("""\[url\](\S+?)\[/url\]""", "<a href='$1'>$1</a>")
     bbMap.put("""\[url=(\S+?)\]([\s\S]+?)\[/url\]""", "<a href='$1'>$2</a>")
     bbMap.put("""\[img\](\S+?)\[/img\]""", "<img src='$1'/>")
@@ -55,6 +55,8 @@ package object controllers {
   }
 
   def getItemsOnPage(user: Option[User]) = user.map(_.itemsOnPage).getOrElse(dao.defaultItemsOnPage)
+
+  def getSafeSeqFromString(s: String): Seq[String] = s.split(",").filter("""^[\w \-]+$""".r.findFirstIn(_).isDefined)
 
   case class LoginData(name: String, password: String)
   case class RegisterData(name: String, password: String, password2: String) {
@@ -108,6 +110,14 @@ package object controllers {
     def toMap: Map[String, String] = {
       Map("oldPass" -> oldPass, "newPass" -> newPass, "newPass2" -> newPass2, "compactEntryList" -> compactEntryList.toString,
         "dateFormat" -> dateFormat, "itemsOnPage" -> itemsOnPage.toString, "codeTheme" -> codeTheme.toString)
+    }
+  }
+  case class SearchData(query: String, isEntries: Boolean, isTags: Boolean, from: Option[Date], to: Option[Date], users: String, tags: String) {
+    def toUrlString = {
+      "query=" + query + "&isEntries=" + isEntries + "&isTags=" + isTags +
+        "&from=" + from.map(_.formatted("yyyy-MM-dd")).getOrElse("") +
+        "&to=" + to.map(_.formatted("yyyy-MM-dd")).getOrElse("") +
+        "&users=&usersHiddenString=" + users + "&tags=&tagsHiddenString=" + tags
     }
   }
 }

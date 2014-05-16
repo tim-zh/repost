@@ -5,6 +5,7 @@ import play.api.db.DB
 import play.api.Play.current
 import scala.slick.driver.H2Driver.simple._
 import Database.dynamicSession
+import java.sql.Date
 
 object SlickDao extends Dao {
   val users = TableQuery[User]
@@ -81,7 +82,6 @@ object SlickDao extends Dao {
   }
 
   def getEntries(user: Option[models.User], page: Int, itemsOnPage: Int): (Long, Seq[models.Entry]) = {
-    require(itemsOnPage != 0)
     db withDynTransaction {
       val size = entries.filter(e => isEntryVisible(e, user)).length.run
       val xs = entries.filter(e => isEntryVisible(e, user)).drop(page * itemsOnPage).take(itemsOnPage).list map ModelConverter.getEntry
@@ -96,7 +96,6 @@ object SlickDao extends Dao {
   }
 
   def getEntriesByTag(user: Option[models.User], tag: models.Tag, page: Int, itemsOnPage: Int): (Long, Seq[models.Entry]) = {
-    require(itemsOnPage != 0)
     db withDynTransaction {
       val query = for {
         entry <- entries
@@ -110,11 +109,46 @@ object SlickDao extends Dao {
   }
 
   def getEntriesBySearch(user: Option[models.User], query: String, page: Int, itemsOnPage: Int): (Long, Seq[models.Entry]) = {
-    require(itemsOnPage != 0)
     db withDynTransaction {
       val filterQuery = (e: Entry) => e.title.like("%" + query + "%") && isEntryVisible(e, user)
       val size = entries.filter(filterQuery).length.run
       val xs = entries.filter(filterQuery).drop(page * itemsOnPage).take(itemsOnPage).list map ModelConverter.getEntry
+      (getPagesNumber(size, itemsOnPage), xs)
+    }
+  }
+
+  def getEntriesBySearch(user: Option[models.User], query: String, from: Option[java.util.Date], to: Option[java.util.Date],
+                         users: Seq[models.User], tags: Seq[models.Tag], page: Int, itemsOnPage: Int): (Long, Seq[models.Entry]) = {
+    db withDynTransaction {
+      val _from = from.map(d => new Date(d.getTime))
+      val _to = to.map(d => new Date(d.getTime))
+      val filterQuery = (e: Entry, etr: EntryTag) => {
+        var q = isEntryVisible(e, user)
+        if (!query.isEmpty)
+          q = q && e.title.like("%" + query + "%")
+        if (!users.isEmpty)
+          q = q && (e.author inSet users.map(_.id))
+        if (!tags.isEmpty)
+          q = q && (e.id === etr.entry && (etr.tag inSet tags.map(_.id)))
+        if (_from.isDefined && _to.isDefined)
+          q = q && (e.date between(_from.get, _to.get))
+        else if (_from.isDefined)
+          q = q && (e.date between(_from.get, new Date((new java.util.Date).getTime)))
+        else if (_to.isDefined)
+          q = q && (e.date between(new Date(0), _to.get))
+        q
+      }
+      val q =
+        if (tags.isEmpty)
+          entries.filter(filterQuery(_, null))
+        else
+          for {
+            entry <- entries
+            etr <- entryTagRelation
+            if filterQuery(entry, etr)
+          } yield entry
+      val size = q.length.run
+      val xs = q.drop(page * itemsOnPage).take(itemsOnPage).list map ModelConverter.getEntry
       (getPagesNumber(size, itemsOnPage), xs)
     }
   }
@@ -166,7 +200,19 @@ object SlickDao extends Dao {
 
   def getTagsBySearch(query: String): Seq[models.Tag] = {
     db withDynTransaction {
-      tags.filter(_.title like "%" + query + "%").take(numberOfTagsBySearch).list map ModelConverter.getTag
+      tags.filter(_.title like "%" + query + "%").take(rowNumberInPopupSearch).list map ModelConverter.getTag
+    }
+  }
+
+  def getUsersByNames(names: Seq[String]): Seq[models.User] = {
+    db withDynTransaction {
+      users.filter(_.name inSet names).take(rowNumberInPopupSearch).list map ModelConverter.getUser
+    }
+  }
+
+  def getUsersBySearch(query: String): Seq[models.User] = {
+    db withDynTransaction {
+      users.filter(_.name like "%" + query + "%").take(rowNumberInPopupSearch).list map ModelConverter.getUser
     }
   }
 

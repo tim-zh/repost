@@ -43,7 +43,8 @@ object SquerylDao extends Schema with Dao {
     user.name is unique,
     user.compactEntryList defaultsTo false,
     user.dateFormat defaultsTo "dd MMM yyyy hh:mm:ss",
-    user.itemsOnPage defaultsTo defaultItemsOnPage
+    user.itemsOnPage defaultsTo defaultItemsOnPage,
+    user.codeTheme defaultsTo 0
   ))
 
   on(entries)(entry => declare(
@@ -160,24 +161,66 @@ object SquerylDao extends Schema with Dao {
 
   def getEntriesByTag(user: Option[models.User], tag: models.Tag, page: Int,
                       itemsOnPage: Int): (Long, Seq[models.Entry]) = inTransaction {
+    val filterQuery = (entry: Entry, et: EntryTagKey) =>
+      isEntryVisible(entry, user) and (entry.id === et.entryId) and (tag.id === et.tagId)
     val size = from(entries, entryTag)((entry, et) =>
-      where(isEntryVisible(entry, user) and (entry.id === et.entryId) and (tag.id === et.tagId)) compute count
+      where(filterQuery(entry, et)) compute count
     ).single.measures
     val xs = from(entries, entryTag)((entry, et) =>
-      where(isEntryVisible(entry, user) and (entry.id === et.entryId) and (tag.id === et.tagId)) select entry
+      where(filterQuery(entry, et)) select entry
     ).page(page * itemsOnPage, itemsOnPage)
     (getPagesNumber(size, itemsOnPage), xs.toList)
   }
 
   def getEntriesBySearch(user: Option[models.User], query: String, page: Int,
                          itemsOnPage: Int): (Long, Seq[models.Entry]) = inTransaction {
+    val filterQuery = (entry: Entry) =>
+      isEntryVisible(entry, user) and (entry.title like "%" + query + "%")
     val size = from(entries)(entry =>
-      where(isEntryVisible(entry, user) and (entry.title like "%" + query + "%")) compute count
+      where(filterQuery(entry)) compute count
     ).single.measures
     val xs = from(entries)(entry =>
-      where(isEntryVisible(entry, user) and (entry.title like "%" + query + "%")) select entry
+      where(filterQuery(entry)) select entry
     ).page(page * itemsOnPage, itemsOnPage)
     (getPagesNumber(size, itemsOnPage), xs.toList)
+  }
+
+  def getEntriesBySearch(user: Option[models.User], query: String, _from: Option[Date], _to: Option[Date],
+                         users: Seq[models.User], tags: Seq[models.Tag], page: Int, itemsOnPage: Int): (Long, Seq[models.Entry]) = inTransaction {
+    val filterQuery = (entry: Entry, et: EntryTagKey) => {
+     var q = isEntryVisible(entry, user)
+      if (!query.isEmpty)
+        q = q and (entry.title like "%" + query + "%")
+      if (!users.isEmpty)
+        q = q and (entry.authorId in users.map(_.id))
+      if (!tags.isEmpty)
+        q = q and (entry.id === et.entryId and (et.tagId in tags.map(_.id)))
+      if (_from.isDefined && _to.isDefined)
+        q = q and (entry.date between(_from.get, _to.get))
+      else if (_from.isDefined)
+        q = q and (entry.date between(_from.get, new Date))
+      else if (_to.isDefined)
+        q = q and (entry.date between(new Date(0), _to.get))
+      q
+    }
+    var size = 0L
+    var xs: List[Entry] = Nil
+    if (tags.isEmpty) {
+      size = from(entries)(entry =>
+        where(filterQuery(entry, null)) compute count
+      ).single.measures
+      xs = from(entries)(entry =>
+        where(filterQuery(entry, null)) select entry
+      ).page(page * itemsOnPage, itemsOnPage).toList
+    } else {
+      size = from(entries, entryTag)((entry, et) =>
+        where(filterQuery(entry, et)) compute count
+      ).single.measures
+      xs = from(entries, entryTag)((entry, et) =>
+        where(filterQuery(entry, et)) select entry
+      ).page(page * itemsOnPage, itemsOnPage).toList
+    }
+    (getPagesNumber(size, itemsOnPage), xs)
   }
 
   def getEntry(user: Option[models.User], id: Long): Option[models.Entry] = inTransaction {
@@ -212,7 +255,15 @@ object SquerylDao extends Schema with Dao {
   }
 
   def getTagsBySearch(query: String): Seq[models.Tag] = inTransaction {
-    tags.where(_.title like "%" + query + "%").page(0, numberOfTagsBySearch).toList
+    tags.where(_.title like "%" + query + "%").page(0, rowNumberInPopupSearch).toList
+  }
+
+  def getUsersByNames(names: Seq[String]): Seq[models.User] = inTransaction {
+    users.where(_.name in names).page(0, rowNumberInPopupSearch).toList
+  }
+
+  def getUsersBySearch(query: String): Seq[models.User] = inTransaction {
+    users.where(_.name like "%" + query + "%").page(0, rowNumberInPopupSearch).toList
   }
 
   def addComment(author: models.User, entry: models.Entry, content: String): models.Comment = inTransaction {

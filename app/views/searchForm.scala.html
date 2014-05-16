@@ -1,0 +1,54 @@
+@(user: Option[User])
+@wrapper(user) {
+	<form method="get" action="/search" class="form-horizontal h5">
+		<div class="form-group">
+			<label class="col-xs-2 control-label" for="query">query</label>
+			<div class="col-xs-3">
+				<input type="text" class="form-control" name="query" id="query">
+			</div>
+		</div>
+		<div class="form-group">
+			<label class="col-xs-offset-2 col-xs-4">
+				<input type="checkbox" name="isEntries" id="isEntries" value=true checked>
+				entries
+				<input type="checkbox" name="isTags" id="isTags" value=true checked>
+				tags
+			</label>
+		</div>
+		<div class="form-group">
+			<label class="col-xs-2 control-label">dates</label>
+			<div class="col-xs-3">
+				<input type="date" class="form-control" name="from" id="from">
+			</div>
+			<div class="col-xs-3">
+				<input type="date" class="form-control" name="to" id="to">
+			</div>
+		</div>
+		<div class="form-group">
+			<label class="col-xs-2 control-label" for="tags">users</label>
+			<div class="col-xs-3">
+				<input type="text" class="form-control" id="usersText">
+			</div>
+			<span id="userListContainer"></span>
+			<input type="hidden" name="users" id="users">
+		</div>
+		<div class="form-group">
+			<label class="col-xs-2 control-label" for="tags">tags</label>
+			<div class="col-xs-3">
+				<input type="text" class="form-control" id="tagsText">
+			</div>
+			<span id="tagListContainer"></span>
+			<input type="hidden" name="tags" id="tags">
+		</div>
+		<div class="form-group">
+			<div class="col-xs-offset-2 col-xs-3">
+				<button type="submit" class="btn btn-success btn-sm">search</button>
+			</div>
+		</div>
+	</form>
+} {
+	<script>
+		initAutocomplete('/tags', $('#tagsText'), $('#tagListContainer'), $('#tags'));
+		initAutocomplete('/users', $('#usersText'), $('#userListContainer'), $('#users'));
+	</script>
+}
