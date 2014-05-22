@@ -51,6 +51,10 @@ body {
 	padding: 2px 4px;
 }
 
+.form-group-xs input, .form-group-xs input, {
+	height: 22px;
+}
+
 .favorite-list a {
     overflow: hidden;
 }

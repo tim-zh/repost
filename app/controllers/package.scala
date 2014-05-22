@@ -1,12 +1,19 @@
+import com.ning.http.util.AsyncHttpProviderUtils
+import java.io._
 import java.text.SimpleDateFormat
 import java.util.Date
 import models.User
 import models.squeryl.SquerylDao
-import play.api.data._
+import play.api.data.FormError
+import play.api.libs.iteratee.{Done, Input, Cont, Iteratee}
+import play.api.libs.ws.WS
 import play.api.mvc._
 import play.cache.Cache
+import scala.concurrent.ExecutionContext.Implicits.global
 import scala.collection.immutable.TreeMap
 import scala.collection.mutable
+import scala.concurrent.Future
+import scala.Some
 
 package object controllers {
   val dao = SquerylDao
@@ -57,6 +64,39 @@ package object controllers {
   def getItemsOnPage(user: Option[User]) = user.map(_.itemsOnPage).getOrElse(dao.defaultItemsOnPage)
 
   def getSafeSeqFromString(s: String): Seq[String] = s.split(",").filter("""^[\w \-]+$""".r.findFirstIn(_).isDefined)
+
+  def saveImage(url: String, user: Option[User]): Future[Option[String]] = {
+    def fromStream(stream: OutputStream): Iteratee[Array[Byte], Unit] = Cont {
+      case e @ Input.EOF =>
+        stream.close()
+        Done((), e)
+      case Input.El(data) =>
+        stream.write(data)
+        fromStream(stream)
+      case Input.Empty =>
+        fromStream(stream)
+    }
+
+    var result: Future[Option[String]] = Future(None)
+    if (user.isDefined) {
+      var filename = util.Random.nextLong().toHexString + """(\.\w{1,5})$""".r.findFirstIn(url).getOrElse("")
+      try {
+        AsyncHttpProviderUtils.validateSupportedScheme(AsyncHttpProviderUtils.createUri(url))
+        val file = new File("public/images/uploaded/", filename)
+        if (!file.createNewFile())
+          throw new IOException()
+        val outputStream = new BufferedOutputStream(new FileOutputStream(file.getAbsoluteFile))
+        result = WS.url(url).withFollowRedirects(true).withRequestTimeout(30000).get(headers => fromStream(outputStream)).flatMap(_.run).map {
+          _ => if (filename.isEmpty) None else Some("/assets/images/uploaded/" + filename)
+        }
+      } catch {
+        case e @ (_: IOException | _: SecurityException | _: IllegalArgumentException) =>
+          e.printStackTrace()
+          filename = ""
+      }
+    }
+    result
+  }
 
   case class LoginData(name: String, password: String)
   case class RegisterData(name: String, password: String, password2: String) {

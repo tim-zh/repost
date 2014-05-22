@@ -6,19 +6,20 @@ import java.util.UUID
 import play.api.data._
 import play.api.data.Forms._
 import play.api.libs.json.Json
-import play.api.libs.iteratee._
 import play.api.libs.ws.WS
 import play.api.mvc._
 import play.cache.Cache
+import scala.collection.JavaConversions._
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
-import scala.concurrent.future
+import org.jsoup.Jsoup
+import org.jsoup.nodes.Element
+import org.jsoup.select.Elements
+import java.util.concurrent.ConcurrentHashMap
 
 object Application extends Controller {
-  implicit val impDao = dao
 
   def index(page: Int) = Action { implicit req =>
-    dao.init()
     val user = getUserFromSession
     val (pagesNumber, entries) = dao.getEntries(user, page, getItemsOnPage(user))
     Ok(views.html.index(user, page, pagesNumber, entries))
@@ -299,37 +300,8 @@ object Application extends Controller {
 
   //ajax call from saveEntry form
   def saveImageFromUrl(url: String) = Action.async { implicit req =>
-    def fromStream(stream: OutputStream): Iteratee[Array[Byte], Unit] = Cont {
-      case e @ Input.EOF =>
-        stream.close()
-        Done((), e)
-      case Input.El(data) =>
-        stream.write(data)
-        fromStream(stream)
-      case Input.Empty =>
-        fromStream(stream)
-    }
-
     val user = getUserFromSession
-    var result: Future[SimpleResult] = future(Ok(""))
-    if (user.isDefined) {
-      var filename = util.Random.nextLong().toHexString + """(\.\w{1,5})$""".r.findFirstIn(url).getOrElse("")
-      try {
-        AsyncHttpProviderUtils.validateSupportedScheme(AsyncHttpProviderUtils.createUri(url))
-        val file = new File("public/images/uploaded/", filename)
-        if (!file.createNewFile())
-          throw new IOException()
-        val outputStream = new BufferedOutputStream(new FileOutputStream(file.getAbsoluteFile))
-        result = WS.url(url).withRequestTimeout(30000).get(headers => fromStream(outputStream)).flatMap(_.run).map {
-          _ => Ok(if (filename.isEmpty) "" else "/assets/images/uploaded/" + filename)
-        }
-      } catch {
-        case e @ (_: IOException | _: SecurityException | _: IllegalArgumentException) =>
-          e.printStackTrace()
-          filename = ""
-      }
-    }
-    result
+    saveImage(url, user).map(s => Ok(s.getOrElse("")))
   }
 
   //ajax call from saveEntry form
@@ -352,6 +324,77 @@ object Application extends Controller {
           filename = ""
       }
     }
-    future(Ok(if (filename.isEmpty) "" else "/assets/images/uploaded/" + filename))
+    Future(Ok(if (filename.isEmpty) "" else "/assets/images/uploaded/" + filename))
+  }
+
+  //ajax call from saveEntry form
+  def saveContentFromUrl(url: String, startText: String, endText: String) = Action.async { implicit req =>
+    def getBbCodeFromTag(e: Element): (String, String) = e.tagName match {
+      case "br" => ("[br]", "")
+      case "strong" | "b" => ("[b]", "[/b]")
+      case t @ ("i" | "u" | "s" | "blockquote" | "ol" | "li" | "p") => ("[" + t + "]", "[/" + t + "]")
+      case "span" => if (e.hasAttr("size")) ("[size=" + e.attr("size") + "]", "[/size]") else ("", "")
+      case "a" => if (e.hasAttr("href")) ("[url=" + e.attr("href") + "]", "[/url]") else ("", "")
+      case "img" => {
+        var size = ""
+        if (e.hasAttr("width") || e.hasAttr("height"))
+          size = "=" + (if (e.hasAttr("width")) e.attr("width") else "") + "," + (if (e.hasAttr("height")) e.attr("height") else "")
+        if (e.hasAttr("src"))
+          ("[img" + size + "]" + e.attr("src"), "[/img]")
+        else
+          ("", "")
+      }
+      case "pre" | "code" => ("[code]", "[/code]")
+      case "h1" | "h2" | "h3" | "h4" | "h5" => ("[size=" + (55 - e.tagName.charAt(1)) + "]", "[/size]")
+    }
+    val validTagSet = Set("br", "strong", "b", "i", "u", "s", "span", "a", "img", "blockquote", "ol", "li", "pre", "code", "p", "h1", "h2", "h3", "h4", "h5")
+    def parseTree(elements: Elements) {
+      elements.iterator.foreach(e => {
+        if (validTagSet.contains(e.tagName)) {
+          val bbCodes = getBbCodeFromTag(e)
+          e.prependText(bbCodes._1)
+          e.appendText(bbCodes._2)
+        }
+        parseTree(e.children)
+        e.unwrap()
+      })
+    }
+
+    getUserFromSession match {
+      case user @ Some(_) =>
+        try {
+          AsyncHttpProviderUtils.validateSupportedScheme(AsyncHttpProviderUtils.createUri(url))
+          WS.url(url).withFollowRedirects(true).withRequestTimeout(30000).get.map {
+            response => {
+              var start = if (startText.isEmpty) 0 else response.body.indexOf(startText)
+              var end = if (endText.isEmpty) 0 else response.body.indexOf(endText, start) + endText.length
+              while (response.body.lastIndexOf(">", start) == start - 1 && response.body.lastIndexOf("</", start) < response.body.lastIndexOf("<", start - 1))
+                start -= response.body.lastIndexOf(">", start) - response.body.lastIndexOf("<", start) + 1
+              while (response.body.indexOf("</", end) == end)
+                end += response.body.indexOf(">", end) - response.body.indexOf("</", end) + 1
+              val content = if (end == 0) response.body.substring(start) else response.body.substring(start, end)
+              val doc = Jsoup.parseBodyFragment(content)
+              val urlMap = new ConcurrentHashMap[String, String]
+              var futureList = List[Future[Unit]]()
+              for (img <- doc.select("img").iterator)
+                futureList = saveImage(img.attr("src"), user).map[Unit](s => if (s.isDefined) urlMap.put(img.attr("src"), s.get)) :: futureList
+              Future.sequence(futureList) map {
+                _ =>
+                  parseTree(doc.body.children)
+                  var text = doc.body.html
+                  urlMap.foreach(pair => text = text.replaceAll(pair._1, pair._2))
+                  text = text.replaceAll("<", "&lt;").replaceAll(">", "&gt;").replaceAll("\\[br]", "\r\n")
+                  Ok(text)
+              }
+            }
+          }.flatMap(f => f)
+        } catch {
+          case e: IllegalArgumentException =>
+            e.printStackTrace()
+            Future(Ok(""))
+        }
+      case None =>
+        Future(Ok(""))
+    }
   }
 }

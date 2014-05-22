@@ -17,7 +17,7 @@ var initAutocomplete = function(serviceUrl, textInput, container, hiddenString) 
 		if (event.keyCode == 13 && textInput.val()) {
 			event.preventDefault();
 			addLabelsToContainer(textInput.val(), container, hiddenString);
-			textInput.val("");
+			textInput.val('');
 		}
 	});
 	textInput.autocomplete({
@@ -27,7 +27,27 @@ var initAutocomplete = function(serviceUrl, textInput, container, hiddenString) 
 		triggerSelectOnValidInput: false,
 		onSelect: function(suggestion) {
 			addLabelsToContainer(suggestion.value, container, hiddenString);
-			textInput.val("");
+			textInput.val('');
 		}
 	});
 }
+
+var isLoading = false;
+var insertResponse = function(serviceUrl, parametersObject, urlInput, uploadButton, contentTextArea, callback) {
+	if (isLoading)
+		return;
+	isLoading = true;
+	var buttonText = uploadButton.text();
+	uploadButton.text('loading');
+	parametersObject.url = urlInput.val();
+	$.get(serviceUrl, parametersObject, function(response) {
+		if (response) {
+			if (callback)
+				response = callback(response);
+			contentTextArea[0].value = insertInString(contentTextArea[0].value, response, contentTextArea[0].selectionEnd);
+			urlInput.val('');
+		}
+		uploadButton.text(buttonText);
+		isLoading = false;
+	});
+};
