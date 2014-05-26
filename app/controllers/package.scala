@@ -65,6 +65,15 @@ package object controllers {
 
   def getSafeSeqFromString(s: String): Seq[String] = s.split(",").filter("""^[\w \-]+$""".r.findFirstIn(_).isDefined)
 
+  @throws(classOf[IOException])
+  def createImageFile(originalFilename: String) = {
+    val filename = util.Random.nextLong().toHexString + """(\.\w{1,5})$""".r.findFirstIn(originalFilename).getOrElse("")
+    val file = new File("public/images/uploaded/", filename)
+    if (!file.getParentFile.mkdirs() && !file.createNewFile())
+      throw new IOException()
+    file
+  }
+
   def saveImage(url: String, user: Option[User]): Future[Option[String]] = {
     def fromStream(stream: OutputStream): Iteratee[Array[Byte], Unit] = Cont {
       case e @ Input.EOF =>
@@ -79,12 +88,11 @@ package object controllers {
 
     var result: Future[Option[String]] = Future(None)
     if (user.isDefined) {
-      var filename = util.Random.nextLong().toHexString + """(\.\w{1,5})$""".r.findFirstIn(url).getOrElse("")
+      var filename = ""
       try {
         AsyncHttpProviderUtils.validateSupportedScheme(AsyncHttpProviderUtils.createUri(url))
-        val file = new File("public/images/uploaded/", filename)
-        if (!file.getParentFile.mkdirs() && !file.createNewFile())
-          throw new IOException()
+        val file = createImageFile(url)
+        filename = file.getName
         val outputStream = new BufferedOutputStream(new FileOutputStream(file.getAbsoluteFile))
         result = WS.url(url).withFollowRedirects(true).withRequestTimeout(30000).get(headers => fromStream(outputStream)).flatMap(_.run).map {
           _ => if (filename.isEmpty) None else Some("/assets/images/uploaded/" + filename)
@@ -135,8 +143,7 @@ package object controllers {
         errors = FormError("pass2", "password mismatch") :: errors
       try {
         new SimpleDateFormat(dateFormat).format(new Date)
-      }
-      catch {
+      } catch {
         case t: IllegalArgumentException =>
           errors = FormError("dateFormat", "incorrect date format") :: errors
       }
@@ -160,4 +167,5 @@ package object controllers {
         "&users=&usersHiddenString=" + users + "&tags=&tagsHiddenString=" + tags
     }
   }
+  case class ImportData(title: String, startText: String, endText: String, separator: String, tags: String, openForAll: Boolean)
 }

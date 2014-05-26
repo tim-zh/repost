@@ -1,0 +1,42 @@
+@(user: Option[User])
+@wrapper(user) {
+	<form method="post" action="/content/import" enctype="multipart/form-data" class="form-horizontal h5">
+		@renderInput(labelText = "title", inputName = "title") {
+			<span class="help-block">[[C]] to insert counter</span>
+		}
+		@renderInput(labelText = "start text", inputName = "startText")()
+		@renderInput(labelText = "end text", inputName = "endText")()
+		@renderInput(labelText = "text entry separator", inputName = "separator")()
+		<div class="form-group">
+			<label class="col-xs-4 col-xs-offset-2" for="openForAll">
+				<input type="checkbox" name="openForAll" id="openForAll" value=true>
+			open for all
+			</label>
+		</div>
+		@renderInput(labelText = "tags", inputName = "tags") {
+			<span id="tagListContainer"></span>
+		}
+		<input type="hidden" name="tagsHiddenString" id="tagsHiddenString">
+		<div class="form-group form-group-xs">
+			<label class="col-xs-2 control-label" for="images">images</label>
+			<div class="col-xs-2">
+				<input type="file" placeholder="images" class="form-control-xs" name="images" id="images" accept="image/*" multiple="true">
+			</div>
+		</div>
+		<div class="form-group form-group-xs">
+			<label class="col-xs-2 control-label" for="texts">texts</label>
+			<div class="col-xs-2">
+				<input type="file" placeholder="texts" class="form-control-xs" name="texts" id="texts" accept="text/*" multiple="true">
+			</div>
+		</div>
+		<div class="form-group">
+			<div class="col-xs-2 col-xs-offset-2">
+				<button type="submit" class="btn btn-success btn-sm" id="importButton">import</button>
+			</div>
+		</div>
+	</form>
+} {
+	<script>
+		initAutocomplete('/tags', $('#tags'), $('#tagListContainer'), $('#tagsHiddenString'));
+	</script>
+}

@@ -1,0 +1,5 @@
+@(user: Option[User], entries: Iterable[Entry] = Nil)
+@wrapper(user) {
+	<h3>Imported entries:</h3>
+	@entryList(user, entries)
+}()

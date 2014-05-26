@@ -36,6 +36,8 @@ POST        /favorite/remove/:title        controllers.Application.removeFavorit
 GET         /image/fromUrl                 controllers.Application.saveImageFromUrl(url: String ?= "")
 POST        /image/fromFile                controllers.Application.saveImageFromFile()
 GET         /content/fromUrl               controllers.Application.saveContentFromUrl(url: String ?= "", startText: String ?= "", endText: String ?= "")
+GET         /content/importForm            controllers.Application.importForm()
+POST        /content/import                controllers.Application.importContent()
 
 # Map static resources from the /public folder to the /assets URL path
 GET         /assets/*file                  controllers.Assets.at(path="/public", file)

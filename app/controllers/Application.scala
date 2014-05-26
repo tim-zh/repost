@@ -282,23 +282,22 @@ object Application extends Controller {
   def saveImageFromFile() = Action.async(parse.multipartFormData) { implicit req =>
     val user = getUserFromSession
     var filename = ""
-    if (user.isDefined) {
-      try {
-        req.body.file("quickImageFile").map { image =>
-          filename = util.Random.nextLong().toHexString + """(\.\w{1,5})$""".r.findFirstIn(image.filename).getOrElse("")
-          val file = new File("public/images/uploaded/", filename)
-          if (!file.createNewFile())
-            throw new IOException()
-          image.ref.moveTo(file, replace = true)
+    Future {
+      if (user.isDefined) {
+        try {
+          req.body.file("quickImageFile").map { image =>
+            val file = createImageFile(image.filename)
+            filename = file.getName
+            image.ref.moveTo(file, replace = true)
+          }
+        } catch {
+          case e @ (_: IOException | _: SecurityException) =>
+            e.printStackTrace()
+            filename = ""
         }
       }
-      catch {
-        case e @ (_: IOException | _: SecurityException) =>
-          e.printStackTrace()
-          filename = ""
-      }
+      Ok(if (filename.isEmpty) "" else "/assets/images/uploaded/" + filename)
     }
-    Future(Ok(if (filename.isEmpty) "" else "/assets/images/uploaded/" + filename))
   }
 
   //ajax call from saveEntry form
@@ -369,6 +368,61 @@ object Application extends Controller {
         }
       case None =>
         Future(Ok(""))
+    }
+  }
+
+  def importForm() = Action { implicit req =>
+    val user = getUserFromSession
+    Ok(views.html.importForm(user))
+  }
+
+  def importContent() = Action.async(parse.multipartFormData) { implicit req =>
+    val user = getUserFromSession
+    val importForm = Form(mapping("title" -> text,
+                                  "startText" -> text,
+                                  "endText" -> text,
+                                  "separator" -> text,
+                                  "tagsHiddenString" -> text,
+                                  "openForAll" -> boolean)(ImportData.apply)(ImportData.unapply))
+    Future {
+      importForm.bindFromRequest.fold(
+        badForm => Ok(views.html.importList(user)),
+        importData => {
+          val tags = dao.getTagsByTitles(getSafeSeqFromString(importData.tags), addNew = false)
+          if (user.isDefined) {
+            var entries: List[models.Entry] = Nil
+            var counter = 0
+            req.body.files.foreach { f =>
+              if (f.contentType.isDefined && f.contentType.get.startsWith("image")) {
+                try {
+                  val file = createImageFile(f.filename)
+                  f.ref.moveTo(file, replace = true)
+                  counter += 1
+                  entries = dao.addEntry(user.get, importData.title.replace("[[C]]", counter.toString), tags, importData.openForAll,
+                    importData.startText + "<img src='/assets/images/uploaded/" + file.getName + "'/>" + importData.endText) :: entries
+                } catch {
+                  case e @ (_: IOException | _: SecurityException) =>
+                    e.printStackTrace()
+                }
+              } else if (f.contentType.isDefined && f.contentType.get.startsWith("text")) {
+                val source = io.Source.fromFile(f.ref.file)
+                if (importData.separator.isEmpty)
+                  entries = dao.addEntry(user.get, importData.title.replace("[[C]]", counter.toString), tags, importData.openForAll,
+                    importData.startText + source.mkString + importData.endText) :: entries
+                else
+                  source.mkString.split(importData.separator).foreach { str =>
+                    counter += 1
+                    entries = dao.addEntry(user.get, importData.title.replace("[[C]]", counter.toString), tags, importData.openForAll,
+                      importData.startText + str + importData.endText) :: entries
+                  }
+                source.close()
+              }
+            }
+            Ok(views.html.importList(user, entries))
+          } else
+            Ok(views.html.importList(user))
+        }
+      )
     }
   }
 }
