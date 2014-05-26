@@ -26,7 +26,7 @@ microEditor = function(element, buttonContainer, options) {
 		underline: ['<u>u</u>', '[u]', '[/u]'],
 		strike: ['<s>s</s>', '[s]', '[/s]'],
 		size: ['size', '', '', function(text, selectionStart, selectionEnd) {
-			var openTag = '[size=' + prompt('size (1..7)') + ']';
+			var openTag = '[size=' + prompt('size (1..7), 3 is normal') + ']';
 			var result = insertInString(text, openTag, selectionStart);
 			result = insertInString(result, '[/size]', selectionEnd + openTag.length);
 			return result;
@@ -41,9 +41,9 @@ microEditor = function(element, buttonContainer, options) {
 		image: ['image', '', '', function(text, selectionStart, selectionEnd) {
 			var width = prompt('width');
 			var height = prompt('height');
-			var openTag = width || height ? '[img=' + width + ',' + height + ']' : '[img]';
-			var result = insertInString(text, openTag, selectionStart);
-			result = insertInString(result, '[/img]', selectionEnd + openTag.length);
+			var url = prompt('url');
+			var imgTag = (width || height ? '[img=' + width + ',' + height + ']' : '[img]') + url + '[/img]';
+			var result = insertInString(text, imgTag, selectionStart);
 			return result;
 		}],
 		quote: ['quote', '[quote]', '[/quote]'],
@@ -62,11 +62,11 @@ microEditor = function(element, buttonContainer, options) {
 		italic: [/\[i\]([\s\S]+?)\[\/i\]/g, '<i>$1</i>'],
 		underline: [/\[u\]([\s\S]+?)\[\/u\]/g, '<u>$1</u>'],
 		strike: [/\[s\]([\s\S]+?)\[\/s\]/g, '<s>$1</s>'],
-		size: [/\[size=(\d+?)\]([\s\S]+?)\[\/size\]/g, '<span size=$1>$2</span>'],
-		link: [/\[url\](\S+?)\[\/url\]/g, '<a href="$1">$1</a>'],
-		link2: [/\[url=(\S+?)\]([\s\S]+?)\[\/url\]/g, '<a href="$1">$2</a>'],
-		image: [/\[img\](\S+?)\[\/img\]/g, '<img src="$1"/>'],
-		image2: [/\[img=(\d*?),(\d*?)\](\S+?)\[\/img\]/g, '<img width="$1" height="$2" src="$3"/>'],
+		size: [/\[size=(\d+?)\]([\s\S]+?)\[\/size\]/g, '<font size=$1>$2</font>'],
+		link: [/\[url\]([\S&&[^']]+?)\[\/url\]/g, '<a href="$1">$1</a>'],
+		link2: [/\[url=([\S&&[^']]+?)\]([\s\S]+?)\[\/url\]/g, '<a href="$1">$2</a>'],
+		image: [/\[img\]([\S&&[^']]+?)\[\/img\]/g, '<img src="$1"/>'],
+		image2: [/\[img=(\d*?),(\d*?)\]([\S&&[^']]+?)\[\/img\]/g, '<img width="$1" height="$2" src="$3"/>'],
 		quote: [/\[quote\]([\s\S]+?)\[\/quote\]/g, '<blockquote>$1</blockquote>'],
 		list: [/\[ol\]([\s\S]+?)\[\/ol\]/g, '<ol>$1</ol>'],
 		listItem: [/\[li\]([\s\S]+?)\[\/li\]/g, '<li>$1</li>'],
@@ -116,10 +116,10 @@ microEditor = function(element, buttonContainer, options) {
 			var text = element.value;
 			defaultOptions.previewReplacements.split(',').filter(function(e) {return previewReplacements[e]}).
 				forEach(function(rule) {text = text.replace(previewReplacements[rule][0], previewReplacements[rule][1])});
-			if (options.customReplacements)
+			if (options && options.customReplacements)
 				options.customReplacements.forEach(function(rule) {text = text.replace(rule[0], rule[1])});
 			previewContainer.innerHTML = text;
-			if (options.onPreview)
+			if (options && options.onPreview)
 				options.onPreview(previewContainer);
 		}
 		element.style.display = isPreview ? 'none' : elementDisplay;
@@ -135,7 +135,7 @@ microEditor = function(element, buttonContainer, options) {
 			if (defaultButtons[btn])
 				addButton(panel, 'microEditor' + btn, defaultButtons[btn][0], defaultButtons[btn][1], defaultButtons[btn][2], '',
 					defaultButtons[btn][3]);
-			else if (options.customButtons[btn]) {
+			else if (options && options.customButtons[btn]) {
 				var b = options.customButtons[btn];
 				addButton(panel, 'microEditor' + btn, b[0], b[1], b[2], b[3], b[4]);
 			}

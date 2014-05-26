@@ -52,7 +52,7 @@ object Application extends Controller {
                                   "tags" -> text)(SearchData.apply)(SearchData.unapply))
     searchForm.bindFromRequest.fold(
       badForm => {
-        if (badForm.data.contains("query")) {
+        if (badForm.data contains "query") {
           val query = badForm.data("query")
           val (pagesNumber, entries) = dao.getEntriesBySearch(user, query, page, getItemsOnPage(user))
           val tags = dao.getTagsBySearch(query)
@@ -302,35 +302,35 @@ object Application extends Controller {
 
   //ajax call from saveEntry form
   def saveContentFromUrl(url: String, startText: String, endText: String) = Action.async { implicit req =>
-    def getBbCodeFromTag(e: Element): (String, String) = e.tagName match {
+    def getBbWrapFromTag(e: Element): (String, String) = e.tagName match {
       case "br" => ("[br]", "")
       case "strong" | "b" => ("[b]", "[/b]")
       case t @ ("i" | "u" | "s" | "blockquote" | "ol" | "li" | "p") => ("[" + t + "]", "[/" + t + "]")
-      case "span" => if (e.hasAttr("size")) ("[size=" + e.attr("size") + "]", "[/size]") else ("", "")
+      case "font" => if (e.hasAttr("size")) ("[size=" + e.attr("size") + "]", "[/size]") else ("", "")
       case "a" => if (e.hasAttr("href")) ("[url=" + e.attr("href") + "]", "[/url]") else ("", "")
-      case "img" => {
-        var size = ""
-        if (e.hasAttr("width") || e.hasAttr("height"))
-          size = "=" + (if (e.hasAttr("width")) e.attr("width") else "") + "," + (if (e.hasAttr("height")) e.attr("height") else "")
-        if (e.hasAttr("src"))
+      case "img" =>
+        if (e.hasAttr("src")) {
+          var size = ""
+          if (e.hasAttr("width") || e.hasAttr("height"))
+            size = "=" + (if (e.hasAttr("width")) e.attr("width") else "") + "," + (if (e.hasAttr("height")) e.attr("height") else "")
           ("[img" + size + "]" + e.attr("src"), "[/img]")
-        else
+        } else
           ("", "")
-      }
       case "pre" | "code" => ("[code]", "[/code]")
       case "h1" | "h2" | "h3" | "h4" | "h5" => ("[size=" + (55 - e.tagName.charAt(1)) + "]", "[/size]")
     }
-    val validTagSet = Set("br", "strong", "b", "i", "u", "s", "span", "a", "img", "blockquote", "ol", "li", "pre", "code", "p", "h1", "h2", "h3", "h4", "h5")
+    val validTagSet = Set("br", "strong", "b", "i", "u", "s", "font", "a", "img", "blockquote", "ol", "li", "pre",
+      "code", "p", "h1", "h2", "h3", "h4", "h5")
     def parseTree(elements: Elements) {
-      elements.iterator.foreach(e => {
-        if (validTagSet.contains(e.tagName)) {
-          val bbCodes = getBbCodeFromTag(e)
+      elements.iterator.foreach { e =>
+        if (validTagSet contains e.tagName) {
+          val bbCodes = getBbWrapFromTag(e)
           e.prependText(bbCodes._1)
           e.appendText(bbCodes._2)
         }
         parseTree(e.children)
         e.unwrap()
-      })
+      }
     }
 
     getUserFromSession match {
@@ -341,7 +341,8 @@ object Application extends Controller {
             response => {
               var start = if (startText.isEmpty) 0 else response.body.indexOf(startText)
               var end = if (endText.isEmpty) 0 else response.body.indexOf(endText, start) + endText.length
-              while (response.body.lastIndexOf(">", start) == start - 1 && response.body.lastIndexOf("</", start) < response.body.lastIndexOf("<", start - 1))
+              while (response.body.lastIndexOf(">", start) == start - 1 &&
+                  response.body.lastIndexOf("</", start) < response.body.lastIndexOf("<", start - 1))
                 start -= response.body.lastIndexOf(">", start) - response.body.lastIndexOf("<", start) + 1
               while (response.body.indexOf("</", end) == end)
                 end += response.body.indexOf(">", end) - response.body.indexOf("</", end) + 1
@@ -351,12 +352,12 @@ object Application extends Controller {
               var futureList = List[Future[Unit]]()
               for (img <- doc.select("img").iterator)
                 futureList = saveImage(img.attr("src"), user).map[Unit](s => if (s.isDefined) urlMap.put(img.attr("src"), s.get)) :: futureList
-              Future.sequence(futureList) map {
-                _ =>
-                  parseTree(doc.body.children)
+              Future.sequence(futureList) map { _ =>
+                parseTree(doc.body.children)
                   var text = doc.body.html
                   urlMap.foreach(pair => text = text.replaceAll(pair._1, pair._2))
-                  text = text.replaceAll("<", "&lt;").replaceAll(">", "&gt;").replaceAll("\\[br]", "\r\n")
+                  text = text.replaceAll("<", "&lt;").replaceAll(">", "&gt;").replaceAll("\\[br]", "\r\n").
+                    replaceAll("\\[code]\\[code]", "[code]").replaceAll("\\[/code]\\[/code]", "[/code]")
                   Ok(text)
               }
             }
@@ -401,8 +402,7 @@ object Application extends Controller {
                   entries = dao.addEntry(user.get, importData.title.replace("[[C]]", counter.toString), tags, importData.openForAll,
                     importData.startText + "<img src='/assets/images/uploaded/" + file.getName + "'/>" + importData.endText) :: entries
                 } catch {
-                  case e @ (_: IOException | _: SecurityException) =>
-                    e.printStackTrace()
+                  case e @ (_: IOException | _: SecurityException) => e.printStackTrace()
                 }
               } else if (f.contentType.isDefined && f.contentType.get.startsWith("text")) {
                 val source = io.Source.fromFile(f.ref.file)
