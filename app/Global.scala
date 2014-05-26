@@ -17,8 +17,8 @@ object Global extends GlobalSettings {
 
   override def onStart(app: Application) {
     dao.init()
-    Akka.system(app).scheduler.schedule(0.seconds, 20.seconds) {
-      Logger.info("free memory: " + Runtime.getRuntime.freeMemory / 1024 / 1024 + "Mb")
+    Akka.system(app).scheduler.schedule(0.seconds, app.configuration.getInt("mem.monitor.interval").getOrElse(30).seconds) {
+      Logger.info("free memory: " + Runtime.getRuntime.freeMemory / 1024 / 1024 + " Mb")
     }
   }
 }
