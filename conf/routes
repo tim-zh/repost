@@ -1,5 +1,5 @@
-POST        /auth                          controllers.Application.auth()
-POST        /logout                        controllers.Application.logout()
+POST        /auth                          controllers.AuthController.login()
+POST        /logout                        controllers.AuthController.logout()
 GET         /register                      controllers.Application.register()
 POST        /register                      controllers.Application.register()
 

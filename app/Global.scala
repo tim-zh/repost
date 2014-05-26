@@ -17,8 +17,8 @@ object Global extends GlobalSettings {
 
   override def onStart(app: Application) {
     dao.init()
-    Akka.system(app).scheduler.schedule(0.seconds, 2.days) {
-      //delete unused files in public/images/uploaded
+    Akka.system(app).scheduler.schedule(0.seconds, 20.seconds) {
+      Logger.info("free memory: " + Runtime.getRuntime.freeMemory / 1024 / 1024 + "Mb")
     }
   }
 }

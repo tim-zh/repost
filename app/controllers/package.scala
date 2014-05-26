@@ -83,7 +83,7 @@ package object controllers {
       try {
         AsyncHttpProviderUtils.validateSupportedScheme(AsyncHttpProviderUtils.createUri(url))
         val file = new File("public/images/uploaded/", filename)
-        if (!file.createNewFile())
+        if (!file.getParentFile.mkdirs() && !file.createNewFile())
           throw new IOException()
         val outputStream = new BufferedOutputStream(new FileOutputStream(file.getAbsoluteFile))
         result = WS.url(url).withFollowRedirects(true).withRequestTimeout(30000).get(headers => fromStream(outputStream)).flatMap(_.run).map {

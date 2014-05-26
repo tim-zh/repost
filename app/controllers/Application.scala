@@ -2,20 +2,18 @@ package controllers
 
 import com.ning.http.util.AsyncHttpProviderUtils
 import java.io._
-import java.util.UUID
+import java.util.concurrent.ConcurrentHashMap
 import play.api.data._
 import play.api.data.Forms._
 import play.api.libs.json.Json
 import play.api.libs.ws.WS
 import play.api.mvc._
-import play.cache.Cache
 import scala.collection.JavaConversions._
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import org.jsoup.Jsoup
 import org.jsoup.nodes.Element
 import org.jsoup.select.Elements
-import java.util.concurrent.ConcurrentHashMap
 
 object Application extends Controller {
 
@@ -23,30 +21,6 @@ object Application extends Controller {
     val user = getUserFromSession
     val (pagesNumber, entries) = dao.getEntries(user, page, getItemsOnPage(user))
     Ok(views.html.index(user, page, pagesNumber, entries))
-  }
-
-  def auth() = Action { implicit req =>
-    val loginForm = Form(mapping("name" -> nonEmptyText, "pass" -> nonEmptyText)(LoginData.apply)(LoginData.unapply))
-    loginForm.bindFromRequest.fold(
-      badForm =>
-        Redirect("/"),
-      loginData => {
-        val user = dao.getUser(loginData.name, loginData.password)
-        user match {
-          case Some(x) =>
-            val key = UUID.randomUUID().toString
-            Cache.set(key, x)
-            Redirect("/").withSession(req.session +("user", key))
-          case None =>
-            Redirect("/")
-        }
-      }
-    )
-  }
-
-  def logout() = Action { implicit req =>
-    Cache.remove(req.session.get("user").getOrElse(""))
-    Redirect("/").withNewSession
   }
 
   def register() = Action { implicit req =>
@@ -219,7 +193,7 @@ object Application extends Controller {
             val updatedUser = dao.updateUser(user.get.id, if (userData.newPass != user.get.password) userData.newPass else user.get.password,
               userData.compactEntryList, userData.dateFormat, userData.itemsOnPage, userData.codeTheme)
             if (updatedUser.isDefined)
-              Cache.set(req.session.get("user").getOrElse("-1"), updatedUser.get)
+              AuthController.updateSession(updatedUser.get)
             Redirect("/")
           } else
             Ok(views.html.user(user, user.get, errors, userData.toMap))
@@ -364,7 +338,7 @@ object Application extends Controller {
       case user @ Some(_) =>
         try {
           AsyncHttpProviderUtils.validateSupportedScheme(AsyncHttpProviderUtils.createUri(url))
-          WS.url(url).withFollowRedirects(true).withRequestTimeout(30000).get.map {
+          WS.url(url).withFollowRedirects(true).withRequestTimeout(30000).get().map {
             response => {
               var start = if (startText.isEmpty) 0 else response.body.indexOf(startText)
               var end = if (endText.isEmpty) 0 else response.body.indexOf(endText, start) + endText.length
