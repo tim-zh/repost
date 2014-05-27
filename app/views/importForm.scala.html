@@ -1,14 +1,13 @@
 @(user: Option[User])
 @wrapper(user) {
 	<form method="post" action="/content/import" enctype="multipart/form-data" class="form-horizontal h5">
-		@renderInput(labelText = "title", inputName = "title") {
-			<span class="help-block">[[C]] to insert counter</span>
-		}
-		@renderInput(labelText = "start text", inputName = "startText")()
-		@renderInput(labelText = "end text", inputName = "endText")()
-		@renderInput(labelText = "text entry separator", inputName = "separator") {
-			<span class="help-block">[[NL]] is new line</span>
-		}
+		<div class="form-group">
+			<div class="col-xs-4 col-xs-offset-2">
+				<span class="help-block">[[C]] to insert counter in title, start text or end text.<br/>
+					[[N]] for new line sign in start text, end text or separator</span>
+			</div>
+		</div>
+		@renderInput(labelText = "title", inputName = "title")()
 		<div class="form-group">
 			<label class="col-xs-4 col-xs-offset-2" for="openForAll">
 				<input type="checkbox" name="openForAll" id="openForAll" value=true>
@@ -19,18 +18,22 @@
 			<span id="tagListContainer"></span>
 		}
 		<input type="hidden" name="tagsHiddenString" id="tagsHiddenString">
+		<hr/>
+		@renderInput(labelText = "prepended text", inputName = "startText")()
+		@renderInput(labelText = "appended text", inputName = "endText")()
 		<div class="form-group form-group-xs">
-			<label class="col-xs-2 control-label" for="images">images</label>
-			<div class="col-xs-2">
+			<label class="col-xs-2 control-label" for="images">import images</label>
+			<div class="col-xs-3">
 				<input type="file" placeholder="images" class="form-control-xs" name="images" id="images" accept="image/*" multiple="true">
 			</div>
 		</div>
-		<div class="form-group form-group-xs">
-			<label class="col-xs-2 control-label" for="texts">texts</label>
-			<div class="col-xs-2">
-				<input type="file" placeholder="texts" class="form-control-xs" name="texts" id="texts" accept="text/*" multiple="true">
+		<div class="form-group">
+			<label class="col-xs-2 control-label" for="texts">or import text</label>
+			<div class="col-xs-3">
+				<textarea class="form-control" name="texts" id="texts"></textarea>
 			</div>
 		</div>
+		@renderInput(labelText = "text entry separator", inputName = "separator")()
 		<div class="form-group">
 			<div class="col-xs-2 col-xs-offset-2">
 				<button type="submit" class="btn btn-success btn-sm" id="importButton">import</button>

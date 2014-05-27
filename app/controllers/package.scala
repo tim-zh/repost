@@ -35,9 +35,6 @@ package object controllers {
 
   def getHtmlFromBbCodeAndEscape(text: String): String = {
     var html: String = text
-    val escapeMap = new mutable.HashMap[String, String]
-    escapeMap.put("<", "&lt;")
-    escapeMap.put(">", "&gt;")
     val bbMap = new mutable.HashMap[String, String]
     bbMap.put("""(\r\n|\r|\n|\n\r)""", "<br/>")
     bbMap.put("""\[b\]([\s\S]+?)\[/b\]""", "<strong>$1</strong>")
@@ -56,7 +53,7 @@ package object controllers {
     bbMap.put("""\[code=([\S&&[^']]*?)\]([\s\S]+?)\[/code\]""", "<pre><code class='$1'>$2</code></pre>")
     bbMap.put("""\[p\]([\s\S]+?)\[/p\]""", "<p>$1</p>")
 
-    escapeMap.foreach(entry => html = html.replaceAll(entry._1, entry._2))
+    html = escape(html)
     bbMap.foreach(entry => html = html.replaceAll(entry._1, entry._2))
     html
   }
@@ -64,6 +61,8 @@ package object controllers {
   def getItemsOnPage(user: Option[User]) = user.map(_.itemsOnPage).getOrElse(dao.defaultItemsOnPage)
 
   def getSafeSeqFromString(s: String): Seq[String] = s.split(",").filter("""^[\w \-]+$""".r.findFirstIn(_).isDefined)
+
+  def escape(s: String) = s.replaceAll("<", "&lt;").replaceAll(">", "&gt;")
 
   @throws(classOf[IOException])
   def createImageFile(originalFilename: String) = {
@@ -167,5 +166,5 @@ package object controllers {
         "&users=&usersHiddenString=" + users + "&tags=&tagsHiddenString=" + tags
     }
   }
-  case class ImportData(title: String, startText: String, endText: String, separator: String, tags: String, openForAll: Boolean)
+  case class ImportData(title: String, openForAll: Boolean, tags: String, startText: String, endText: String, texts: String, separator: String)
 }

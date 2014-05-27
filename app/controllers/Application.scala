@@ -378,46 +378,51 @@ object Application extends Controller {
   }
 
   def importContent() = Action.async(parse.multipartFormData) { implicit req =>
+    def replaceC(s: String, c: Int) = s.replaceAll("\\[\\[C]]", c.toString)
+    def replaceBr(s: String) = s.replaceAll("""(\r\n|\r|\n|\n\r)""", "<br/>")
     val user = getUserFromSession
     val importForm = Form(mapping("title" -> text,
+                                  "openForAll" -> boolean,
+                                  "tagsHiddenString" -> text,
                                   "startText" -> text,
                                   "endText" -> text,
-                                  "separator" -> text,
-                                  "tagsHiddenString" -> text,
-                                  "openForAll" -> boolean)(ImportData.apply)(ImportData.unapply))
+                                  "texts" -> text,
+                                  "separator" -> text)(ImportData.apply)(ImportData.unapply))
     Future {
       importForm.bindFromRequest.fold(
         badForm => Ok(views.html.importList(user)),
         importData => {
-          val tags = dao.getTagsByTitles(getSafeSeqFromString(importData.tags), addNew = false)
+          val tags = dao.getTagsByTitles(getSafeSeqFromString(importData.tags), addNew = true)
           if (user.isDefined) {
             var entries: List[models.Entry] = Nil
             var counter = 0
+            val startText = replaceBr(escape(importData.startText.replaceAll("\\[\\[N]]", "\r\n")))
+            val endText = replaceBr(escape(importData.endText.replaceAll("\\[\\[N]]", "\r\n")))
+            val separator = importData.separator.replaceAll("\\[\\[N]]", "\r\n")
             req.body.files.foreach { f =>
-              if (f.contentType.isDefined && f.contentType.get.startsWith("image")) {
-                try {
-                  val file = createImageFile(f.filename)
-                  f.ref.moveTo(file, replace = true)
-                  counter += 1
-                  entries = dao.addEntry(user.get, importData.title.replace("[[C]]", counter.toString), tags, importData.openForAll,
-                    importData.startText + "<img src='/assets/images/uploaded/" + file.getName + "'/>" + importData.endText) :: entries
-                } catch {
-                  case e @ (_: IOException | _: SecurityException) => e.printStackTrace()
-                }
-              } else if (f.contentType.isDefined && f.contentType.get.startsWith("text")) {
-                val source = io.Source.fromFile(f.ref.file)
-                if (importData.separator.isEmpty)
-                  entries = dao.addEntry(user.get, importData.title.replace("[[C]]", counter.toString), tags, importData.openForAll,
-                    importData.startText + source.mkString + importData.endText) :: entries
-                else
-                  source.mkString.split(importData.separator.replace("[[NL]]", "\r\n")).foreach { str =>
-                    counter += 1
-                    entries = dao.addEntry(user.get, importData.title.replace("[[C]]", counter.toString), tags, importData.openForAll,
-                      importData.startText + str + importData.endText) :: entries
-                  }
-                source.close()
+              try {
+                val file = createImageFile(f.filename)
+                f.ref.moveTo(file, replace = true)
+                counter += 1
+                entries = dao.addEntry(user.get, replaceC(importData.title, counter), tags, importData.openForAll,
+                  replaceC(startText, counter) + "<img src='/assets/images/uploaded/" + file.getName + "'/>" +
+                    replaceC(endText, counter)) :: entries
+              } catch {
+                case e @ (_: IOException | _: SecurityException) => e.printStackTrace()
               }
             }
+            if (!importData.texts.isEmpty)
+              if (importData.separator.isEmpty)
+                entries = dao.addEntry(user.get, replaceC(importData.title, counter), tags, importData.openForAll,
+                  replaceC(startText, counter) + replaceBr(escape(importData.texts)) +
+                    replaceC(endText, counter)) :: entries
+              else
+                importData.texts.split(separator).foreach { str =>
+                  counter += 1
+                  entries = dao.addEntry(user.get, replaceC(importData.title, counter), tags, importData.openForAll,
+                    replaceC(startText, counter) + replaceBr(escape(str)) +
+                      replaceC(endText, counter)) :: entries
+                }
             Ok(views.html.importList(user, entries))
           } else
             Ok(views.html.importList(user))
