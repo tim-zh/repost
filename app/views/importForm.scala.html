@@ -6,7 +6,9 @@
 		}
 		@renderInput(labelText = "start text", inputName = "startText")()
 		@renderInput(labelText = "end text", inputName = "endText")()
-		@renderInput(labelText = "text entry separator", inputName = "separator")()
+		@renderInput(labelText = "text entry separator", inputName = "separator") {
+			<span class="help-block">[[NL]] is new line</span>
+		}
 		<div class="form-group">
 			<label class="col-xs-4 col-xs-offset-2" for="openForAll">
 				<input type="checkbox" name="openForAll" id="openForAll" value=true>

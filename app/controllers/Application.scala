@@ -410,7 +410,7 @@ object Application extends Controller {
                   entries = dao.addEntry(user.get, importData.title.replace("[[C]]", counter.toString), tags, importData.openForAll,
                     importData.startText + source.mkString + importData.endText) :: entries
                 else
-                  source.mkString.split(importData.separator).foreach { str =>
+                  source.mkString.split(importData.separator.replace("[[NL]]", "\r\n")).foreach { str =>
                     counter += 1
                     entries = dao.addEntry(user.get, importData.title.replace("[[C]]", counter.toString), tags, importData.openForAll,
                       importData.startText + str + importData.endText) :: entries
