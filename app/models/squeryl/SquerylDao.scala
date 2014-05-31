@@ -10,16 +10,16 @@ import play.api.db.DB
 import play.api.Play.current
 
 object SquerylDao extends Schema with Dao {
-  val users = table[User]
-  val entries = table[Entry]
-  val comments = table[Comment]
-  val tags = table[Tag]
+  val users = table[User]("users")
+  val entries = table[Entry]("entries")
+  val comments = table[Comment]("comments")
+  val tags = table[Tag]("tags")
 
   val userEntry = oneToManyRelation(users, entries).via((u, e) => u.id === e.authorId)
   val userComment = oneToManyRelation(users, comments).via((u, c) => u.id === c.authorId)
-  val userFavoriteTag = manyToManyRelation(users, tags).via[UserTagKey]((u, t, utk) => (u.id === utk.userId, t.id === utk.tagId))
+  val userFavoriteTag = manyToManyRelation(users, tags, "user_tag").via[UserTagKey]((u, t, utk) => (u.id === utk.userId, t.id === utk.tagId))
   val entryComment = oneToManyRelation(entries, comments).via((e, c) => e.id === c.entryId)
-  val entryTag = manyToManyRelation(entries, tags).via[EntryTagKey]((e, t, etk) => (e.id === etk.entryId, t.id === etk.tagId))
+  val entryTag = manyToManyRelation(entries, tags, "entry_tag").via[EntryTagKey]((e, t, etk) => (e.id === etk.entryId, t.id === etk.tagId))
 
   case class UserTagKey(userId: Long, tagId: Long) extends KeyedEntity[CompositeKey2[Long, Long]] {
     def id = compositeKey(userId, tagId)
@@ -39,8 +39,8 @@ object SquerylDao extends Schema with Dao {
 
   on(users)(user => declare(
     user.id is (primaryKey, autoIncremented),
-    columns(user.name, user.password) are indexed,
-    user.name is unique,
+    columns(user.name, user.password) are (unique, indexed("idx_user_name_password")),
+    user.name is (unique, indexed("idx_user_name")),
     user.compactEntryList defaultsTo false,
     user.dateFormat defaultsTo "dd MMM yyyy hh:mm:ss",
     user.itemsOnPage defaultsTo defaultItemsOnPage,
@@ -49,8 +49,8 @@ object SquerylDao extends Schema with Dao {
 
   on(entries)(entry => declare(
     entry.id is (primaryKey, autoIncremented),
-    entry.title is indexed,
-    entry.content is dbType("varchar(4096)")
+    entry.title is indexed("idx_entry_title"),
+    entry.content is dbType("varchar(40960)")
   ))
 
   on(comments)(comment => declare(
@@ -61,7 +61,7 @@ object SquerylDao extends Schema with Dao {
 
   on(tags)(tag => declare(
     tag.id is (primaryKey, autoIncremented),
-    tag.title is (indexed, unique)
+    tag.title is (unique, indexed("idx_tag_title"))
   ))
 
   userEntry.foreignKeyDeclaration.constrainReference(onDelete cascade)
@@ -72,62 +72,7 @@ object SquerylDao extends Schema with Dao {
   entryTag.leftForeignKeyDeclaration.unConstrainReference()
   entryTag.rightForeignKeyDeclaration.unConstrainReference()
 
-  def init() {
-    Class.forName("org.h2.Driver")
-    SessionFactory.concreteFactory = Some(() => Session.create(DB.getConnection(), new H2Adapter))
-    transaction {
-      try {
-        create
-        populate()
-      }
-      catch {
-        case _ =>
-          drop
-          create
-          populate()
-      }
-    }
-  }
-
-  def populate() {
-    val tag1 = Tag("tag1")
-    tag1.id = 1
-    val tag2 = Tag("tag2")
-    tag2.id = 2
-    val user1 = User("user1", "pass", true, "dd MMM yyyy hh:mm:ss", 2, 1)
-    user1.id = 1
-    val entry1 = Entry(1, "entry1", "content1<br/>bla1", new Date, true)
-    entry1.id = 1
-    val entry2 = Entry(1, "entry2", "content2<br/>bla2", new Date, false)
-    entry2.id = 2
-    val entry3 = Entry(1, "entry3", "content3<br/>bla3", new Date, true)
-    entry3.id = 3
-    val comment1 = Comment(1, new Date, "comment1<br/>c1", 1)
-    val comment2 = Comment(1, new Date, "comment2<br/>c2", 1)
-    val comment3 = Comment(1, new Date, "comment3<br/>c3", 1)
-    val comment4 = Comment(1, new Date, "comment4<br/>c4", 2)
-
-    users.insert(Seq(
-      user1))
-    entries.insert(Seq(
-      entry1,
-      entry2,
-      entry3))
-    comments.insert(Seq(
-      comment1,
-      comment2,
-      comment3,
-      comment4))
-    tags.insert(Seq(
-      tag1,
-      tag2))
-
-    user1._favoriteTags.associate(tag2)
-    entry1._tags.associate(tag1)
-    entry1._tags.associate(tag2)
-    entry2._tags.associate(tag1)
-    entry3._tags.associate(tag2)
-  }
+  SessionFactory.concreteFactory = Some(() => Session.create(DB.getConnection("embedded"), new H2Adapter))
 
   def getUser(name: String, password: String): Option[models.User] = inTransaction {
     from(users)(user =>
@@ -279,7 +224,7 @@ object SquerylDao extends Schema with Dao {
       entry.asInstanceOf[Entry]._tags.dissociateAll
       tags.foreach(tag => entry.asInstanceOf[Entry]._tags.associate(tag.asInstanceOf[Tag]))
       update(entries)(entry => where(entry.id === id) set(entry.title := title, entry.openForAll := openForAll,
-        entry.content := content))
+        entry.content := content, entry.date := new Date))
     }
     getEntry(user, id)
   }

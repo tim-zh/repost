@@ -37,7 +37,7 @@
 			<div class="col-xs-3">
 				<input type="text" class="form-control" id="tagsText">
 			</div>
-			<span id="tagListContainer"></span>
+			<span class="tagListContainer">selected tags: </span>
 			<input type="hidden" name="tags" id="tags">
 		</div>
 		<div class="form-group">
@@ -48,7 +48,7 @@
 	</form>
 } {
 	<script>
-		initAutocomplete('/tags', $('#tagsText'), $('#tagListContainer'), $('#tags'));
+		initAutocomplete('/tags', $('#tagsText'), $('.tagListContainer'), $('#tags'));
 		initAutocomplete('/users', $('#usersText'), $('#userListContainer'), $('#users'));
 	</script>
 }

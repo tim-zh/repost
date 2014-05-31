@@ -15,7 +15,7 @@
 			</label>
 		</div>
 		@renderInput(labelText = "tags", inputName = "tags") {
-			<span id="tagListContainer"></span>
+			<span class="tagListContainer">selected tags: </span>
 		}
 		<input type="hidden" name="tagsHiddenString" id="tagsHiddenString">
 		<hr/>
@@ -42,6 +42,6 @@
 	</form>
 } {
 	<script>
-		initAutocomplete('/tags', $('#tags'), $('#tagListContainer'), $('#tagsHiddenString'));
+		initAutocomplete('/tags', $('#tags'), $('.tagListContainer'), $('#tagsHiddenString'));
 	</script>
 }

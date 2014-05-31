@@ -83,3 +83,7 @@ body {
 .microEditor-buttonGroup {
     padding-right: 8px;
 }
+
+.tagListContainer {
+	line-height: 30px;
+}

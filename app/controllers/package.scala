@@ -2,6 +2,7 @@ import com.ning.http.util.AsyncHttpProviderUtils
 import java.io._
 import java.text.SimpleDateFormat
 import java.util.Date
+import models.slick.SlickDao
 import models.User
 import models.squeryl.SquerylDao
 import play.api.data.FormError
@@ -16,7 +17,7 @@ import scala.concurrent.Future
 import scala.Some
 
 package object controllers {
-  val dao = SquerylDao
+  val dao = SlickDao
   val codeThemeMap = TreeMap(0 -> "dark", 1 -> "github", 2 -> "google code", 3 -> "idea", 4 -> "ir black",
     5 -> "monokai", 6 -> "monokai sublime", 7 -> "obsidian", 8 -> "vs", 9 -> "xcode")
 

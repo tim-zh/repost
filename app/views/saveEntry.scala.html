@@ -5,7 +5,7 @@
 		<input type="hidden" name="id" value="@entryData.get("id").getOrElse(-1)">
 		@renderInput(errors, entryData, "title", "title", "text", "title")()
 		@renderInput(errors, entryData, "tags", "tags", "text") {
-			<span id="tagListContainer"></span>
+			<span class="tagListContainer">selected tags: </span>
 		}
 		<input type="hidden" name="tagsHiddenString" id="tagsHiddenString">
 		<div class="form-group">
@@ -92,7 +92,7 @@
 			});
 		}
 
-		var tagList = $('#tagListContainer');
+		var tagList = $('.tagListContainer');
 		var tagInput = $('#tags');
 		var tagsHiddenString = $('#tagsHiddenString');
 		initAutocomplete('/tags', tagInput, tagList, tagsHiddenString);

@@ -14,8 +14,7 @@ object SlickDao extends Dao {
   val tags = TableQuery[Tag]
   val userFavoriteTagRelation = TableQuery[UserFavoriteTag]
   val entryTagRelation = TableQuery[EntryTag]
-  private val db = Database.forDataSource(DB.getDataSource("default"))
-  private val ddl = users.ddl ++ entries.ddl ++ comments.ddl ++ tags.ddl ++ userFavoriteTagRelation.ddl ++ entryTagRelation.ddl
+  private val db = Database.forDataSource(DB.getDataSource("embedded"))
 
   private def isEntryVisible(e: Entry, user: Option[models.User]) = e.openForAll || (user match {
     case Some(x) => e.author === x.id
@@ -25,42 +24,6 @@ object SlickDao extends Dao {
   private def getPagesNumber(size: Long, itemsOnPage: Long): Long = {
     require(itemsOnPage != 0)
     Math.ceil(size / itemsOnPage.asInstanceOf[Double]).asInstanceOf[Long]
-  }
-
-  def init() {
-    db withDynSession {
-      ddl.create
-
-      users map (x => (x.name, x.password)) ++= Seq(
-        ("user1", "pass"),
-        ("user2", "passs"))
-      entries map (x => (x.author, x.title, x.content, x.openForAll)) ++= Seq(
-        (1, "entry1", "content1<br/>bla1", true),
-        (1, "entry2", "content2<br/>bla2", false),
-        (2, "entry3", "content3<br/>bla3", true),
-        (1, "entry4", "content4<br/>bla4", true))
-      comments map (x => (x.author, x.content, x.entry)) ++= Seq(
-        (1, "comment1<br/>c1", 1),
-        (1, "comment2<br/>c2", 1),
-        (2, "comment3<br/>c3", 1),
-        (1, "comment4<br/>c4", 2))
-      tags map (x => (x.title)) ++= Seq(
-        ("tag1"),
-        ("tag2"))
-      userFavoriteTagRelation ++= Seq(
-        (1, 2))
-      entryTagRelation ++= Seq(
-        (1, 1),
-        (1, 2),
-        (2, 1),
-        (3, 1))
-    }
-  }
-
-  def dropSchema() {
-    db withDynTransaction {
-      ddl.drop
-    }
   }
 
   def getUser(name: String, password: String): Option[models.User] = {
@@ -170,8 +133,8 @@ object SlickDao extends Dao {
   def addEntry(author: models.User, title: String, entryTags: Seq[models.Tag], openForAll: Boolean, content: String): models.Entry = {
     var id = -1L
     db withDynTransaction {
-      id = (entries.map(x => (x.author, x.title, x.content, x.openForAll)) returning entries.map(_.id)) +=
-        (author.id, if (title.isEmpty) "_" else title, content, openForAll)
+      id = (entries.map(x => (x.author, x.title, x.content, x.date, x.openForAll)) returning entries.map(_.id)) +=
+        (author.id, if (title.isEmpty) "_" else title, content, new Date((new java.util.Date).getTime), openForAll)
       entryTags.foreach(tag => entryTagRelation += (id, tag.id))
     }
     getEntry(id).get
@@ -219,8 +182,8 @@ object SlickDao extends Dao {
   def addComment(author: models.User, entry: models.Entry, content: String): models.Comment = {
     var id = -1L
     db withDynTransaction {
-      id = (comments.map(x => (x.author, x.content, x.entry)) returning comments.map(_.id)) +=
-        (author.id, content, entry.id)
+      id = (comments.map(x => (x.author, x.date, x.content, x.entry)) returning comments.map(_.id)) +=
+        (author.id, new Date((new java.util.Date).getTime), content, entry.id)
     }
     getComment(id).get
   }
@@ -230,7 +193,8 @@ object SlickDao extends Dao {
     db withDynTransaction {
       val query = for (entry <- entries if entry.id === id && entry.author === user.map(_.id).getOrElse(-1L))
         yield entry
-      query.map(entry => (entry.title, entry.openForAll, entry.content)).update(title, openForAll, content)
+      query.map(entry => (entry.title, entry.openForAll, entry.content, entry.date)).update(title, openForAll, content,
+        new Date((new java.util.Date).getTime))
       (for (etr <- entryTagRelation if etr.entry === id) yield etr).delete
       entryTags.foreach(tag => entryTagRelation += (id, tag.id))
     }

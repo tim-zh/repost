@@ -16,14 +16,7 @@ object AuthController extends Controller {
         Redirect("/"),
       loginData => {
         val user = dao.getUser(loginData.name, loginData.password)
-        user match {
-          case Some(x) =>
-            val key = UUID.randomUUID().toString
-            Cache.set(key, x)
-            Redirect("/").withSession(req.session +("user", key))
-          case None =>
-            Redirect("/")
-        }
+        authUser(user)
       }
     )
   }
@@ -35,5 +28,16 @@ object AuthController extends Controller {
 
   def updateSession(user: User)(implicit req: Request[_]) {
     Cache.set(req.session.get("user").getOrElse("-1"), user)
+  }
+
+  def authUser(user: Option[User])(implicit req: Request[_]): SimpleResult = {
+    user match {
+      case Some(x) =>
+        val key = UUID.randomUUID().toString
+        Cache.set(key, x)
+        Redirect("/").withSession(req.session +("user", key))
+      case None =>
+        Redirect("/")
+    }
   }
 }

@@ -34,7 +34,7 @@ object Application extends Controller {
         val errors = registerData.validate
         if (errors.isEmpty) {
           val newUser = dao.addUser(registerData.name, registerData.password)
-          Redirect("/").withSession(req.session +("user", newUser.id + ""))
+          AuthController.authUser(Some(newUser))
         } else
           Ok(views.html.register(errors, registerData.toMap))
       }
