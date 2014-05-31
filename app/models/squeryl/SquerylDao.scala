@@ -1,5 +1,6 @@
 package models.squeryl
 
+import java.sql.Timestamp
 import java.util.Date
 import models.Dao
 import org.squeryl.{KeyedEntity, Session, SessionFactory, Schema}
@@ -42,7 +43,7 @@ object SquerylDao extends Schema with Dao {
     columns(user.name, user.password) are (unique, indexed("idx_user_name_password")),
     user.name is (unique, indexed("idx_user_name")),
     user.compactEntryList defaultsTo false,
-    user.dateFormat defaultsTo "dd MMM yyyy hh:mm:ss",
+    user.dateFormat defaultsTo controllers.defaultDateFormat,
     user.itemsOnPage defaultsTo defaultItemsOnPage,
     user.codeTheme defaultsTo 0
   ))
@@ -55,7 +56,6 @@ object SquerylDao extends Schema with Dao {
 
   on(comments)(comment => declare(
     comment.id is (primaryKey, autoIncremented),
-    comment.date defaultsTo new Date,
     comment.content is dbType("varchar(4096)")
   ))
 
@@ -141,11 +141,11 @@ object SquerylDao extends Schema with Dao {
       if (!tags.isEmpty)
         q = q and (entry.id === et.entryId and (et.tagId in tags.map(_.id)))
       if (_from.isDefined && _to.isDefined)
-        q = q and (entry.date between(_from.get, _to.get))
+        q = q and (entry.date between(new Timestamp(_from.get.getTime), new Timestamp(_to.get.getTime)))
       else if (_from.isDefined)
-        q = q and (entry.date between(_from.get, new Date))
+        q = q and (entry.date between(new Timestamp(_from.get.getTime), controllers.now))
       else if (_to.isDefined)
-        q = q and (entry.date between(new Date(0), _to.get))
+        q = q and (entry.date between(new Timestamp(0), new Timestamp(_to.get.getTime)))
       q
     }
     var size = 0L
@@ -173,12 +173,12 @@ object SquerylDao extends Schema with Dao {
   }
 
   def addUser(name: String, password: String): models.User = inTransaction {
-    users.insert(User(name, password, false, "dd MMM yyyy hh:mm:ss", defaultItemsOnPage, 0))
+    users.insert(User(name, password, false, controllers.defaultDateFormat, defaultItemsOnPage, 0))
   }
 
   def addEntry(author: models.User, title: String, tags: Seq[models.Tag], openForAll: Boolean,
                content: String): models.Entry = inTransaction {
-    val entry = entries.insert(Entry(author.id, if (title.isEmpty) "_" else title, content, new Date, openForAll))
+    val entry = entries.insert(Entry(author.id, if (title.isEmpty) "_" else title, content, controllers.now, openForAll))
     entry._author.assign(author.asInstanceOf[User])
     tags.foreach(tag => entry._tags.associate(tag.asInstanceOf[Tag]))
     entry
@@ -212,7 +212,7 @@ object SquerylDao extends Schema with Dao {
   }
 
   def addComment(author: models.User, entry: models.Entry, content: String): models.Comment = inTransaction {
-    val comment = comments.insert(Comment(author.id, new Date, content, entry.id))
+    val comment = comments.insert(Comment(author.id, controllers.now, content, entry.id))
     comment._author.assign(author.asInstanceOf[User])
     comment._entry.assign(entry.asInstanceOf[Entry])
     comment
@@ -224,7 +224,7 @@ object SquerylDao extends Schema with Dao {
       entry.asInstanceOf[Entry]._tags.dissociateAll
       tags.foreach(tag => entry.asInstanceOf[Entry]._tags.associate(tag.asInstanceOf[Tag]))
       update(entries)(entry => where(entry.id === id) set(entry.title := title, entry.openForAll := openForAll,
-        entry.content := content, entry.date := new Date))
+        entry.content := content, entry.date := controllers.now))
     }
     getEntry(user, id)
   }

@@ -6,7 +6,7 @@ create table "users" (
 	"name" VARCHAR NOT NULL,
 	"password" VARCHAR NOT NULL,
 	"compact_entry_list" BOOLEAN DEFAULT false NOT NULL,
-	"date_format" VARCHAR DEFAULT 'dd MMM yyyy hh:mm:ss' NOT NULL,
+	"date_format" VARCHAR DEFAULT 'dd MMM yyyy HH:mm:ss' NOT NULL,
 	"items_on_page" INTEGER DEFAULT 10 NOT NULL,
 	"code_theme" INTEGER DEFAULT 0 NOT NULL);
 create unique index "idx_user_name" on "users" ("name");

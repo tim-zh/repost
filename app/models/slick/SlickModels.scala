@@ -1,7 +1,7 @@
 package models.slick
 
+import java.sql.Timestamp
 import scala.slick.driver.H2Driver.simple._
-import java.sql.Date
 import scala.slick.lifted
 
 class User(ltag: lifted.Tag) extends Table[(Long, Long, String, String, Boolean, String, Int, Int)](ltag, "users") {
@@ -10,7 +10,7 @@ class User(ltag: lifted.Tag) extends Table[(Long, Long, String, String, Boolean,
   def name = column[String]("name")
   def password = column[String]("password")
   def compactEntryList = column[Boolean]("compact_entry_list", O.Default(false))
-  def dateFormat = column[String]("date_format", O.Default("dd MMM yyyy hh:mm:ss"))
+  def dateFormat = column[String]("date_format", O.Default(controllers.defaultDateFormat))
   def itemsOnPage = column[Int]("items_on_page", O.Default(SlickDao.defaultItemsOnPage))
   def codeTheme = column[Int]("code_theme", O.Default(0))
   def * = (id, version, name, password, compactEntryList, dateFormat, itemsOnPage, codeTheme)
@@ -18,24 +18,24 @@ class User(ltag: lifted.Tag) extends Table[(Long, Long, String, String, Boolean,
   def namePasswordIdx = index("idx_user_name_password", (name, password), unique = true)
 }
 
-class Entry(ltag: lifted.Tag) extends Table[(Long, Long, Long, String, String, Date, Boolean)](ltag, "entries") {
+class Entry(ltag: lifted.Tag) extends Table[(Long, Long, Long, String, String, Timestamp, Boolean)](ltag, "entries") {
   def id = column[Long]("id", O.PrimaryKey, O.AutoInc)
   def version = column[Long]("version", O.Default(0))
   def author = column[Long]("author_id")
   def title = column[String]("title")
   def content = column[String]("content", O.DBType("varchar(40960)"))
-  def date = column[Date]("date", O.Default(new Date((new java.util.Date).getTime)))
+  def date = column[Timestamp]("date")
   def openForAll = column[Boolean]("open_for_all")
   def * = (id, version, author, title, content, date, openForAll)
   def titleIdx = index("idx_entry_title", title)
   def authorFk = foreignKey("fk_entry_author", author, SlickDao.users)(_.id)
 }
 
-class Comment(ltag: lifted.Tag) extends Table[(Long, Long, Long, Date, String, Long)](ltag, "comments") {
+class Comment(ltag: lifted.Tag) extends Table[(Long, Long, Long, Timestamp, String, Long)](ltag, "comments") {
   def id = column[Long]("id", O.PrimaryKey, O.AutoInc)
   def version = column[Long]("version", O.Default(0))
   def author = column[Long]("author_id")
-  def date = column[Date]("date", O.Default(new Date((new java.util.Date).getTime)))
+  def date = column[Timestamp]("date")
   def content = column[String]("content", O.DBType("varchar(4096)"))
   def entry = column[Long]("entry_id")
   def * = (id, version, author, date, content, entry)
@@ -86,7 +86,7 @@ case class SlickUser(name: String,
 case class SlickEntry(authorId: Long,
                       title: String,
                       content: String,
-                      date: Date,
+                      date: Timestamp,
                       openForAll: Boolean) extends Entity with models.Entry {
   def author: models.User = SlickDao.getUser(authorId).get
   def tags: Seq[models.Tag] = SlickDao.getTagsByEntry(id)
@@ -94,7 +94,7 @@ case class SlickEntry(authorId: Long,
 }
 
 case class SlickComment(authorId: Long,
-                        date: Date,
+                        date: Timestamp,
                         content: String,
                         entryId: Long) extends Entity with models.Comment {
   def author: models.User = SlickDao.getUser(authorId).get
@@ -111,14 +111,14 @@ object ModelConverter {
     x
   }
 
-  def getEntry(t: (Long, Long, Long, String, String, Date, Boolean)): SlickEntry = {
+  def getEntry(t: (Long, Long, Long, String, String, Timestamp, Boolean)): SlickEntry = {
     val x = SlickEntry(t._3, t._4, t._5, t._6, t._7)
     x.id = t._1
     x.version = t._2
     x
   }
 
-  def getComment(t: (Long, Long, Long, Date, String, Long)): SlickComment = {
+  def getComment(t: (Long, Long, Long, Timestamp, String, Long)): SlickComment = {
     val x = SlickComment(t._3, t._4, t._5, t._6)
     x.id = t._1
     x.version = t._2

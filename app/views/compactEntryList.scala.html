@@ -19,7 +19,7 @@
 			<a href="/user/@entry.author.id">@entry.author.name</a>
 		}
 		</td>
-		<td>@entry.date.format(if (user.isDefined) user.get.dateFormat else "dd MMM yyyy hh:mm:ss")</td>
+		<td>@entry.date.format(if (user.isDefined) user.get.dateFormat else controllers.defaultDateFormat)</td>
 		<td><a href="/entry/@entry.id">@entry.title</a></td>
 	</tr>
 }

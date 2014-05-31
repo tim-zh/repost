@@ -1,11 +1,11 @@
 package models.slick
 
+import java.sql.Timestamp
 import models.Dao
 import play.api.db.DB
 import play.api.Play.current
 import scala.slick.driver.H2Driver.simple._
 import Database.dynamicSession
-import java.sql.Date
 
 object SlickDao extends Dao {
   val users = TableQuery[User]
@@ -83,8 +83,8 @@ object SlickDao extends Dao {
   def getEntriesBySearch(user: Option[models.User], query: String, from: Option[java.util.Date], to: Option[java.util.Date],
                          users: Seq[models.User], tags: Seq[models.Tag], page: Int, itemsOnPage: Int): (Long, Seq[models.Entry]) = {
     db withDynTransaction {
-      val _from = from.map(d => new Date(d.getTime))
-      val _to = to.map(d => new Date(d.getTime))
+      val _from = from.map(d => new Timestamp(d.getTime))
+      val _to = to.map(d => new Timestamp(d.getTime))
       val filterQuery = (e: Entry, etr: EntryTag) => {
         var q = isEntryVisible(e, user)
         if (!query.isEmpty)
@@ -96,9 +96,9 @@ object SlickDao extends Dao {
         if (_from.isDefined && _to.isDefined)
           q = q && (e.date between(_from.get, _to.get))
         else if (_from.isDefined)
-          q = q && (e.date between(_from.get, new Date((new java.util.Date).getTime)))
+          q = q && (e.date between(_from.get, controllers.now))
         else if (_to.isDefined)
-          q = q && (e.date between(new Date(0), _to.get))
+          q = q && (e.date between(new Timestamp(0), _to.get))
         q
       }
       val q =
@@ -134,7 +134,7 @@ object SlickDao extends Dao {
     var id = -1L
     db withDynTransaction {
       id = (entries.map(x => (x.author, x.title, x.content, x.date, x.openForAll)) returning entries.map(_.id)) +=
-        (author.id, if (title.isEmpty) "_" else title, content, new Date((new java.util.Date).getTime), openForAll)
+        (author.id, if (title.isEmpty) "_" else title, content, controllers.now, openForAll)
       entryTags.foreach(tag => entryTagRelation += (id, tag.id))
     }
     getEntry(id).get
@@ -150,7 +150,7 @@ object SlickDao extends Dao {
           if (existingTagMap.contains(title))
             existingTagMap(title)
           else {
-            val id = (tags.map(x => (x.title)) returning tags.map(_.id)) += title
+            val id = (tags.map(_.title) returning tags.map(_.id)) += title
             val result = SlickTag(title)
             result.id = id
             result
@@ -183,7 +183,7 @@ object SlickDao extends Dao {
     var id = -1L
     db withDynTransaction {
       id = (comments.map(x => (x.author, x.date, x.content, x.entry)) returning comments.map(_.id)) +=
-        (author.id, new Date((new java.util.Date).getTime), content, entry.id)
+        (author.id, controllers.now, content, entry.id)
     }
     getComment(id).get
   }
@@ -194,7 +194,7 @@ object SlickDao extends Dao {
       val query = for (entry <- entries if entry.id === id && entry.author === user.map(_.id).getOrElse(-1L))
         yield entry
       query.map(entry => (entry.title, entry.openForAll, entry.content, entry.date)).update(title, openForAll, content,
-        new Date((new java.util.Date).getTime))
+        controllers.now)
       (for (etr <- entryTagRelation if etr.entry === id) yield etr).delete
       entryTags.foreach(tag => entryTagRelation += (id, tag.id))
     }
@@ -241,7 +241,7 @@ object SlickDao extends Dao {
   def addFavoriteTag(user: Option[models.User], title: String): Boolean = {
     db withDynTransaction {
       val tag = getTag(title)
-      var result = user.isDefined && tag.isDefined
+      val result = user.isDefined && tag.isDefined
       if (result)
         userFavoriteTagRelation += (user.get.id, tag.get.id)
       result

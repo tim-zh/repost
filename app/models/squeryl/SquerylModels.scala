@@ -1,7 +1,7 @@
 package models.squeryl
 
+import java.sql.Timestamp
 import org.squeryl.KeyedEntity
-import java.util.Date
 import org.squeryl.annotations.Column
 import org.squeryl.dsl.{OneToMany, ManyToOne}
 import org.squeryl.PrimitiveTypeMode._
@@ -29,7 +29,7 @@ case class User(@Column("name") name: String,
 case class Entry(@Column("author_id") authorId: Long,
                  @Column("title") title: String,
                  @Column("content") content: String,
-                 @Column("date") date: Date,
+                 @Column("date") date: Timestamp,
                  @Column("open_for_all") openForAll: Boolean) extends KeyedEntity[Long] with Entity with models.Entry {
   lazy val _author: ManyToOne[User] = SquerylDao.userEntry.right(this)
   lazy val _comments: OneToMany[Comment] = SquerylDao.entryComment.left(this)
@@ -41,7 +41,7 @@ case class Entry(@Column("author_id") authorId: Long,
 }
 
 case class Comment(@Column("author_id") authorId: Long,
-                   @Column("date") date: Date,
+                   @Column("date") date: Timestamp,
                    @Column("content") content: String,
                    @Column("entry_id") entryId: Long) extends KeyedEntity[Long] with Entity with models.Comment {
   lazy val _author: ManyToOne[User] = SquerylDao.userComment.right(this)

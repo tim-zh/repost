@@ -7,7 +7,7 @@
 			} else {
 				<a href="/user/@comment.author.id">@comment.author.name</a>
 			}
-			(@comment.date.format(if (user.isDefined) user.get.dateFormat else "dd MMM yyyy hh:mm:ss"))
+			(@comment.date.format(if (user.isDefined) user.get.dateFormat else controllers.defaultDateFormat))
 			<a href="/entry/@comment.entry.id?comment_id=@comment.id">#</a>
 		</div>
 		<div class="panel-body">

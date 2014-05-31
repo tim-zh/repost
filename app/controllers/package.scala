@@ -1,8 +1,8 @@
 import com.ning.http.util.AsyncHttpProviderUtils
 import java.io._
+import java.sql.Timestamp
 import java.text.SimpleDateFormat
 import java.util.Date
-import models.slick.SlickDao
 import models.User
 import models.squeryl.SquerylDao
 import play.api.data.FormError
@@ -17,9 +17,12 @@ import scala.concurrent.Future
 import scala.Some
 
 package object controllers {
-  val dao = SlickDao
+  val dao = SquerylDao
   val codeThemeMap = TreeMap(0 -> "dark", 1 -> "github", 2 -> "google code", 3 -> "idea", 4 -> "ir black",
     5 -> "monokai", 6 -> "monokai sublime", 7 -> "obsidian", 8 -> "vs", 9 -> "xcode")
+  final val defaultDateFormat = "dd MMM yyyy HH:mm:ss"
+
+  def now = new Timestamp((new java.util.Date).getTime)
 
   def getUserFromSession(implicit req: Request[_]) = {
     val sessionId = req.session.get("user").getOrElse("-1")
