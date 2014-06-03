@@ -81,21 +81,33 @@
 					<div class="col-xs-2">
 						<div class="panel panel-default h5">
 							<div class="panel-heading">favorite tags:</div>
-								<div class="list-group favorite-list">
-									<div id="favoriteTagList">
-										@for(tag <- user.get.favoriteTags) {
-											<a href="/tag/@tag.title" id="favorite@tag.title"
-													class="list-group-item@(if (selectedTag.isDefined && selectedTag.get.id == tag.id) " active")">
-												@tag.title
-												<button type="button" class="btn btn-default btn-xs pull-right" id="removeFavorite@tag.title" tabindex="-1">
-													remove
-												</button>
-											</a>
-										}
-									</div>
-									<input type="text" placeholder="add" class="form-control list-group-item" id="favoriteTags" tabindex="-1">
+							<div class="list-group favorite-list">
+								<div id="favoriteTagList">
+								@for(tag <- user.get.favoriteTags) {
+									<a href="/tag/@tag.title" id="favorite@tag.title"
+									class="list-group-item@(if(selectedTag.isDefined && selectedTag.get.id == tag.id) " active")">
+										@tag.title
+										<button type="button" class="btn btn-default btn-xs pull-right" id="removeFavorite@tag.title" tabindex="-1">
+											remove
+										</button>
+									</a>
+								}
 								</div>
+								<input type="text" placeholder="add" class="form-control list-group-item" id="favoriteTags" tabindex="-1">
+							</div>
 						</div>
+						@if(selectedTag.isDefined) {
+							<div class="panel panel-default">
+								<div class="panel-heading">tag chat</div>
+								<div class="chat-panel"></div>
+								<div class="input-group input-group-sm">
+									<input type="text" name="messageInput" id="messageInput" class="form-control" tabindex="-1">
+									<span class="input-group-btn">
+										<button type="button" class="btn btn-success" id="sendMessageButton" tabindex="-1">send</button>
+									</span>
+								</div>
+							</div>
+						}
 					</div>
 				}
 			</div>
@@ -109,52 +121,6 @@
 		<script src="@routes.Assets.at("javascripts/highlight.pack.js")"></script>
 		<script src="@routes.Assets.at("javascripts/main.js")"></script>
 		<script>
-			$('#pageScroll').perfectScrollbar();
-			hljs.initHighlightingOnLoad();
-
-			var favoriteTagList = $('#favoriteTagList');
-			var tagInput = $('#favoriteTags');
-			var addFavoriteTags = function(str) {
-				str.
-					split(',').
-					filter(function(s) {return /^[\w \-]+$/.test(s);}).
-					forEach(function(s) {
-						var tagName = s.trim();
-						$.post('/favorite/add/' + tagName, null, function(response) {
-							if ('true' === response) {
-								$('<a href="/tag/' + tagName + '" id="favorite' + tagName + '" class="list-group-item">' + tagName +
-									'<button type="button" class="btn btn-default btn-xs pull-right" id="removeFavorite' + tagName + '">remove</button></a>').
-									appendTo(favoriteTagList);
-								$('#removeFavorite' + tagName).click(function(event) {
-									event.preventDefault();
-									$.post('/favorite/remove/' + tagName, null, function(response) {
-										if ('true' === response)
-											$('#favorite' + tagName).remove();
-									});
-								});
-							}
-						});
-					}
-				);
-			};
-			tagInput.keypress(function(event) {
-				if (event.keyCode == 13 && tagInput.val()) {
-					event.preventDefault();
-					addFavoriteTags(tagInput.val());
-					tagInput.val("");
-				}
-			});
-			tagInput.autocomplete({
-				serviceUrl: '/tags',
-				deferRequestBy: 250,
-				delimiter: ',',
-				triggerSelectOnValidInput: false,
-				onSelect: function(suggestion) {
-					addFavoriteTags(suggestion.value);
-					tagInput.val("");
-				}
-			});
-
 			@if(user.isDefined) {
 				@for(tag <- user.get.favoriteTags) {
 					$('#removeFavorite@tag.title').click(function(event) {
@@ -164,6 +130,29 @@
 								$('#favorite@tag.title').remove();
 						});
 					});
+				}
+				@if(selectedTag.isDefined) {
+					var chatContainer = $('.chat-panel');
+					$.get('/chat/history/@selectedTag.get.title', {}, function(response) {
+						chatContainer.append(response);
+					});
+					var chatSocket = new WebSocket('ws://' + window.location.host + '/chat');
+					var messageInput = $('#messageInput');
+					var sendMessage = function() {
+						chatSocket.send(JSON.stringify({tag: '@selectedTag.map(_.title).getOrElse("")', text: messageInput.val()}));
+						messageInput.val('');
+					};
+					$('#sendMessageButton').click(function() {sendMessage()});
+					messageInput.keypress(function(event) {
+						if (event.keyCode == 13 && messageInput.val()) {
+							event.preventDefault();
+							sendMessage();
+						}
+					});
+					chatSocket.onmessage = function(message) {
+						chatContainer.append(JSON.parse(message.data).text + "<br>");
+						chatContainer.animate({scrollTop: chatContainer[0].scrollHeight}, {duration: 1000, queue: false});
+					};
 				}
 			}
 		</script>

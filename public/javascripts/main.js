@@ -30,7 +30,7 @@ var initAutocomplete = function(serviceUrl, textInput, container, hiddenString) 
 			textInput.val('');
 		}
 	});
-}
+};
 
 var isLoading = false;
 var insertResponse = function(serviceUrl, parametersObject, urlInput, uploadButton, contentTextArea, callback) {
@@ -51,3 +51,50 @@ var insertResponse = function(serviceUrl, parametersObject, urlInput, uploadButt
 		isLoading = false;
 	});
 };
+
+$('.chat-panel').perfectScrollbar({wheelSpeed: 20});
+$('#pageScroll').perfectScrollbar({wheelSpeed: 20});
+hljs.initHighlightingOnLoad();
+
+var favoriteTagList = $('#favoriteTagList');
+var tagInput = $('#favoriteTags');
+var addFavoriteTags = function(str) {
+	str.
+		split(',').
+		filter(function(s) {return /^[\w \-]+$/.test(s);}).
+		forEach(function(s) {
+			var tagName = s.trim();
+			$.post('/favorite/add/' + tagName, null, function(response) {
+				if ('true' === response) {
+					$('<a href="/tag/' + tagName + '" id="favorite' + tagName + '" class="list-group-item">' + tagName +
+						'<button type="button" class="btn btn-default btn-xs pull-right" id="removeFavorite' + tagName + '">remove</button></a>').
+						appendTo(favoriteTagList);
+					$('#removeFavorite' + tagName).click(function(event) {
+						event.preventDefault();
+						$.post('/favorite/remove/' + tagName, null, function(response) {
+							if ('true' === response)
+								$('#favorite' + tagName).remove();
+						});
+					});
+				}
+			});
+		}
+	);
+};
+tagInput.keypress(function(event) {
+	if (event.keyCode == 13 && tagInput.val()) {
+		event.preventDefault();
+		addFavoriteTags(tagInput.val());
+		tagInput.val("");
+	}
+});
+tagInput.autocomplete({
+	serviceUrl: '/tags',
+	deferRequestBy: 250,
+	delimiter: ',',
+	triggerSelectOnValidInput: false,
+	onSelect: function(suggestion) {
+		addFavoriteTags(suggestion.value);
+		tagInput.val("");
+	}
+});

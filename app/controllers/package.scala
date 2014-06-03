@@ -21,10 +21,11 @@ package object controllers {
   val codeThemeMap = TreeMap(0 -> "dark", 1 -> "github", 2 -> "google code", 3 -> "idea", 4 -> "ir black",
     5 -> "monokai", 6 -> "monokai sublime", 7 -> "obsidian", 8 -> "vs", 9 -> "xcode")
   final val defaultDateFormat = "dd MMM yyyy HH:mm:ss"
+  val maxMessageNumber = 50
 
   def now = new Timestamp((new java.util.Date).getTime)
 
-  def getUserFromSession(implicit req: Request[_]) = {
+  def getUserFromSession(implicit req: RequestHeader) = {
     val sessionId = req.session.get("user").getOrElse("-1")
     val user = Cache.get(sessionId)
     if (user == null) None else Some(user.asInstanceOf[User])
@@ -66,7 +67,7 @@ package object controllers {
 
   def getSafeSeqFromString(s: String): Seq[String] = s.split(",").filter("""^[\w \-]+$""".r.findFirstIn(_).isDefined)
 
-  def escape(s: String) = s.replaceAll("<", "&lt;").replaceAll(">", "&gt;")
+  def escape(s: String) = s.replaceAll("<", "&lt;").replaceAll("'", "&#39;")
 
   @throws(classOf[IOException])
   def createImageFile(originalFilename: String) = {

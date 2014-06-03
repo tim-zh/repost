@@ -51,7 +51,7 @@ body {
 	padding: 2px 4px;
 }
 
-.form-group-xs input, .form-group-xs input, {
+.form-group-xs input {
 	height: 22px;
 }
 
@@ -86,4 +86,12 @@ body {
 
 .tagListContainer {
 	line-height: 30px;
+}
+
+.chat-panel {
+	position: relative;
+	word-wrap: break-word;
+	overflow-y: hidden;
+	height: 400px;
+	font-size: 80%;
 }

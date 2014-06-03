@@ -39,5 +39,8 @@ GET         /content/fromUrl               controllers.Application.saveContentFr
 GET         /content/importForm            controllers.Application.importForm()
 POST        /content/import                controllers.Application.importContent()
 
+GET         /chat                          controllers.ChatController.connect()
+GET         /chat/history/:tagTitle         controllers.ChatController.history(tagTitle: String)
+
 # Map static resources from the /public folder to the /assets URL path
 GET         /assets/*file                  controllers.Assets.at(path="/public", file)
