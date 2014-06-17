@@ -21,11 +21,6 @@ object SlickDao extends Dao {
     case None => false
   })
 
-  private def getPagesNumber(size: Long, itemsOnPage: Long): Long = {
-    require(itemsOnPage != 0)
-    Math.ceil(size / itemsOnPage.asInstanceOf[Double]).asInstanceOf[Long]
-  }
-
   def getUser(name: String, password: String): Option[models.User] = {
     db withDynTransaction {
       users.filter(u => u.name === name && u.password === password).firstOption map ModelConverter.getUser
@@ -259,12 +254,12 @@ object SlickDao extends Dao {
     }
   }
 
-  def updateUser(id: Long, password: String, compactEntryList: Boolean, dateFormat: String, itemsOnPage: Int,
+  def updateUser(id: Long, password: String, entryListType: models.ListType.LT, dateFormat: String, itemsOnPage: Int,
                  codeTheme: Int): Option[models.User] = {
     db withDynTransaction {
       val query = for (user <- users if user.id === id) yield user
-      query.map(user => (user.password, user.compactEntryList, user.dateFormat, user.itemsOnPage, user.codeTheme)).
-        update(password, compactEntryList, dateFormat, itemsOnPage, codeTheme)
+      query.map(user => (user.password, user.entryListType, user.dateFormat, user.itemsOnPage, user.codeTheme)).
+        update(password, entryListType.id, dateFormat, itemsOnPage, codeTheme)
     }
     getUser(id)
   }

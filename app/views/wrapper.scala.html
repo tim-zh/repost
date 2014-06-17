@@ -55,6 +55,12 @@
 						<a href="/entry/save"><button type="button" class="btn btn-sm btn-success">add entry</button></a>
 					</div>
 				</div>
+				<form method="post" action="/" class="navbar-form navbar-right">
+					<div class="input-group input-group-sm col-xs-12">
+						<input type="hidden" name="changeListType" value="true">
+						<button type="submit" class="btn btn-sm btn-default navbar-right">@user.get.entryListType.toString</button>
+					</div>
+				</form>
 			} else {
 				<form method="post" action="/auth" class="navbar-form navbar-right">
 					<div class="form-group input-group-sm">

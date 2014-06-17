@@ -8,9 +8,9 @@
 			@renderInput(errors, entryData, "new password", "newPass", "password")()
 			@renderInput(errors, entryData, "retype new password", "newPass2", "password")()
 			<div class="form-group">
-				<label class="col-xs-offset-2 col-xs-4" for="compactEntryList">
-					<input type="checkbox" name="compactEntryList" id="compactEntryList" value=true
-						@(if (entryData.contains("compactEntryList") && entryData("compactEntryList") == "true") "checked")>
+				<label class="col-xs-offset-2 col-xs-4" for="entryListType">
+					<input type="checkbox" name="entryListType" id="entryListType" value=true
+						@(if (entryData.contains("entryListType") && entryData("entryListType") == "true") "checked")>
 					compact entry list
 				</label>
 			</div>

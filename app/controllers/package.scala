@@ -14,7 +14,6 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.collection.immutable.TreeMap
 import scala.collection.mutable
 import scala.concurrent.Future
-import scala.Some
 
 package object controllers {
   val dao = SquerylDao
@@ -63,7 +62,15 @@ package object controllers {
     html
   }
 
-  def getItemsOnPage(user: Option[User]) = user.map(_.itemsOnPage).getOrElse(dao.defaultItemsOnPage)
+  def getItemsOnPage(user: Option[User]) = {
+    if (user.isDefined) {
+      if (user.get.entryListType == models.ListType.oneByOne)
+        1
+      else
+        user.get.itemsOnPage
+    } else
+      dao.defaultItemsOnPage
+  }
 
   def getSafeSeqFromString(s: String): Seq[String] = s.split(",").filter("""^[\w \-]+$""".r.findFirstIn(_).isDefined)
 
@@ -130,11 +137,13 @@ package object controllers {
   }
   case class EntryData(id: Long, title: String, tags: String, openForAll: Boolean, content: String)
   case class CommentData(entryId: Long, content: String)
-  case class UserData(oldPass: String, newPass: String, newPass2: String, compactEntryList: Boolean,
+  case class UserData(oldPass: String, newPass: String, newPass2: String, entryListType: Int,
                       dateFormat: String, itemsOnPage: Int, codeTheme: Int) {
     def this(badData: Map[String, String]) =
-      this(badData.get("oldPass").getOrElse(""), badData.get("newPass").getOrElse(""),
-          badData.get("newPass2").getOrElse(""), badData.get("compactEntryList").getOrElse("") == "true",
+      this(badData.get("oldPass").getOrElse(""),
+          badData.get("newPass").getOrElse(""),
+          badData.get("newPass2").getOrElse(""),
+          try { Integer.parseInt(badData.get("itemsOnPage").getOrElse(""))} catch { case _: NumberFormatException => -1},
           badData.get("dateFormat").getOrElse(""),
           try { Integer.parseInt(badData.get("itemsOnPage").getOrElse(""))} catch { case _: NumberFormatException => -1},
           try { Integer.parseInt(badData.get("codeTheme").getOrElse(""))} catch { case _: NumberFormatException => -1})
@@ -159,7 +168,7 @@ package object controllers {
     }
 
     def toMap: Map[String, String] = {
-      Map("oldPass" -> oldPass, "newPass" -> newPass, "newPass2" -> newPass2, "compactEntryList" -> compactEntryList.toString,
+      Map("oldPass" -> oldPass, "newPass" -> newPass, "newPass2" -> newPass2, "entryListType" -> entryListType.toString,
         "dateFormat" -> dateFormat, "itemsOnPage" -> itemsOnPage.toString, "codeTheme" -> codeTheme.toString)
     }
   }

@@ -18,7 +18,13 @@ import org.jsoup.select.Elements
 object Application extends Controller {
 
   def index(page: Int) = Action { implicit req =>
-    val user = getUserFromSession
+    var user = getUserFromSession
+    if (user.isDefined && req.body.asFormUrlEncoded.exists(_.contains("changeListType"))) {
+      val listType = models.ListType((user.get.entryListType.id + 1) % 3)
+      user = dao.updateUser(user.get.id, user.get.password, listType, user.get.dateFormat, user.get.itemsOnPage, user.get.codeTheme)
+      if (user.isDefined)
+        AuthController.updateSession(user.get)
+    }
     val (pagesNumber, entries) = dao.getEntries(user, page, getItemsOnPage(user))
     Ok(views.html.index(user, page, pagesNumber, entries))
   }
@@ -169,7 +175,7 @@ object Application extends Controller {
     val user = dao.getUser(id)
     renderOption(user) { x =>
       Ok(views.html.user(currentUser, x, Nil,
-        UserData("", "", "", x.compactEntryList, x.dateFormat, x.itemsOnPage, x.codeTheme).toMap))
+        UserData("", "", "", x.entryListType.id, x.dateFormat, x.itemsOnPage, x.codeTheme).toMap))
     }
   }
 
@@ -179,7 +185,7 @@ object Application extends Controller {
       val saveUserForm = Form(mapping("oldPass" -> text,
                                       "newPass" -> text,
                                       "newPass2" -> text,
-                                      "compactEntryList" -> boolean,
+                                      "entryListType" -> number(0, 2),
                                       "dateFormat" -> text,
                                       "itemsOnPage" -> number,
                                       "codeTheme" -> number)(UserData.apply)(UserData.unapply))
@@ -191,7 +197,7 @@ object Application extends Controller {
           val errors = userData.validate(user.get.password)
           if (errors.isEmpty) {
             val updatedUser = dao.updateUser(user.get.id, if (userData.newPass != user.get.password) userData.newPass else user.get.password,
-              userData.compactEntryList, userData.dateFormat, userData.itemsOnPage, userData.codeTheme)
+              models.ListType(userData.entryListType), userData.dateFormat, userData.itemsOnPage, userData.codeTheme)
             if (updatedUser.isDefined)
               AuthController.updateSession(updatedUser.get)
             Redirect("/")

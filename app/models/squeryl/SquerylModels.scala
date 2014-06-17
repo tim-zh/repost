@@ -13,7 +13,7 @@ sealed trait Entity {
 
 case class User(@Column("name") name: String,
                 @Column("password") password: String,
-                @Column("compact_entry_list") compactEntryList: Boolean,
+                @Column("entry_list_type") entryListType: models.ListType.LT,
                 @Column("date_format") dateFormat: String,
                 @Column("items_on_page") itemsOnPage: Int,
                 @Column("code_theme") codeTheme: Int) extends KeyedEntity[Long] with Entity with models.User {
@@ -24,6 +24,8 @@ case class User(@Column("name") name: String,
   def entries: Iterable[models.Entry] = inTransaction(_entries.toList)
   def comments: Iterable[models.Comment] = inTransaction(_comments.toList)
   def favoriteTags: Iterable[models.Tag] = inTransaction(_favoriteTags.toList)
+
+  def this() = this("", "", models.ListType.list, "", 0, 0)
 }
 
 case class Entry(@Column("author_id") authorId: Long,

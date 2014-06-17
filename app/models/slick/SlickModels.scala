@@ -4,16 +4,16 @@ import java.sql.Timestamp
 import scala.slick.driver.H2Driver.simple._
 import scala.slick.lifted
 
-class User(ltag: lifted.Tag) extends Table[(Long, Long, String, String, Boolean, String, Int, Int)](ltag, "users") {
+class User(ltag: lifted.Tag) extends Table[(Long, Long, String, String, Int, String, Int, Int)](ltag, "users") {
   def id = column[Long]("id", O.PrimaryKey, O.AutoInc)
   def version = column[Long]("version", O.Default(0))
   def name = column[String]("name")
   def password = column[String]("password")
-  def compactEntryList = column[Boolean]("compact_entry_list", O.Default(false))
+  def entryListType = column[Int]("entry_list_type", O.Default(0))
   def dateFormat = column[String]("date_format", O.Default(controllers.defaultDateFormat))
   def itemsOnPage = column[Int]("items_on_page", O.Default(SlickDao.defaultItemsOnPage))
   def codeTheme = column[Int]("code_theme", O.Default(0))
-  def * = (id, version, name, password, compactEntryList, dateFormat, itemsOnPage, codeTheme)
+  def * = (id, version, name, password, entryListType, dateFormat, itemsOnPage, codeTheme)
   def nameIdx = index("idx_user_name", name, unique = true)
   def namePasswordIdx = index("idx_user_name_password", (name, password), unique = true)
 }
@@ -74,7 +74,7 @@ sealed abstract class Entity {
 
 case class SlickUser(name: String,
                      password: String,
-                     compactEntryList: Boolean,
+                     entryListType: models.ListType.LT,
                      dateFormat: String,
                      itemsOnPage: Int,
                      codeTheme: Int) extends Entity with models.User {
@@ -104,8 +104,8 @@ case class SlickComment(authorId: Long,
 case class SlickTag(title: String) extends Entity with models.Tag
 
 object ModelConverter {
-  def getUser(t: (Long, Long, String, String, Boolean, String, Int, Int)): SlickUser = {
-    val x = SlickUser(t._3, t._4, t._5, t._6, t._7, t._8)
+  def getUser(t: (Long, Long, String, String, Int, String, Int, Int)): SlickUser = {
+    val x = SlickUser(t._3, t._4, models.ListType(t._5), t._6, t._7, t._8)
     x.id = t._1
     x.version = t._2
     x

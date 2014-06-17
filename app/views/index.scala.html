@@ -1,7 +1,7 @@
 @(user: Option[User], currentPage: Int, pagesNumber: Long, entries: Iterable[Entry], link: String = "",
 		title: String = "", selectedTag: Option[Tag] = None)
 @wrapper(user, title, selectedTag) {
-	@if(user.isDefined && user.get.compactEntryList) {
+	@if(user.isDefined && user.get.entryListType == models.ListType.compactList) {
 		@compactEntryList(user, entries)
 	} else {
 		@entryList(user, entries)

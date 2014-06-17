@@ -6,6 +6,11 @@ trait Dao {
   val defaultItemsOnPage = 10
   val rowNumberInPopupSearch = 5
 
+  private[models] def getPagesNumber(size: Long, itemsOnPage: Long): Long = {
+    require(itemsOnPage != 0)
+    Math.ceil(size / itemsOnPage.asInstanceOf[Double]).asInstanceOf[Long]
+  }
+
   def getUser(name: String, password: String): Option[User]
 
   def getUser(id: Long): Option[User]
@@ -52,5 +57,5 @@ trait Dao {
 
   def removeFavoriteTag(user: Option[User], title: String): Boolean
 
-  def updateUser(id: Long, password: String, compactEntryList: Boolean, dateFormat: String, itemsOnPage: Int, codeTheme: Int): Option[User]
+  def updateUser(id: Long, password: String, entryListType: models.ListType.LT, dateFormat: String, itemsOnPage: Int, codeTheme: Int): Option[User]
 }

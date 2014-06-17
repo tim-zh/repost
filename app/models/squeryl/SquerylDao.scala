@@ -33,16 +33,11 @@ object SquerylDao extends Schema with Dao {
   private def isEntryVisible(entry: Entry, user: Option[models.User]) =
     entry.openForAll === true or entry.authorId === (user map (_.id) getOrElse -1L)
 
-  private def getPagesNumber(size: Long, itemsOnPage: Long): Long = {
-    require(itemsOnPage != 0)
-    Math.ceil(size / itemsOnPage.asInstanceOf[Double]).asInstanceOf[Long]
-  }
-
   on(users)(user => declare(
     user.id is (primaryKey, autoIncremented),
     columns(user.name, user.password) are (unique, indexed("idx_user_name_password")),
     user.name is (unique, indexed("idx_user_name")),
-    user.compactEntryList defaultsTo false,
+    user.entryListType defaultsTo models.ListType.list,
     user.dateFormat defaultsTo controllers.defaultDateFormat,
     user.itemsOnPage defaultsTo defaultItemsOnPage,
     user.codeTheme defaultsTo 0
@@ -173,7 +168,7 @@ object SquerylDao extends Schema with Dao {
   }
 
   def addUser(name: String, password: String): models.User = inTransaction {
-    users.insert(User(name, password, false, controllers.defaultDateFormat, defaultItemsOnPage, 0))
+    users.insert(User(name, password, models.ListType.list, controllers.defaultDateFormat, defaultItemsOnPage, 0))
   }
 
   def addEntry(author: models.User, title: String, tags: Seq[models.Tag], openForAll: Boolean,
@@ -259,9 +254,9 @@ object SquerylDao extends Schema with Dao {
     result
   }
 
-  def updateUser(id: Long, password: String, compactEntryList: Boolean, dateFormat: String, itemsOnPage: Int,
+  def updateUser(id: Long, password: String, entryListType: models.ListType.LT, dateFormat: String, itemsOnPage: Int,
                  codeTheme: Int): Option[models.User] = inTransaction {
-    update(users)(user => where(user.id === id) set(user.password := password, user.compactEntryList := compactEntryList,
+    update(users)(user => where(user.id === id) set(user.password := password, user.entryListType := entryListType,
       user.dateFormat := dateFormat, user.itemsOnPage := itemsOnPage, user.codeTheme := codeTheme))
     getUser(id)
   }

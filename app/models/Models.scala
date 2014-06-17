@@ -7,10 +7,17 @@ sealed trait Entity {
   def version: Long
 }
 
+object ListType extends Enumeration {
+  type LT = Value
+  val list = Value(0, "list")
+  val compactList = Value(1, "compact list")
+  val oneByOne = Value(2, "one by one")
+}
+
 trait User extends Entity {
   def name: String
   def password: String
-  def compactEntryList: Boolean
+  def entryListType: ListType.LT
   def dateFormat: String
   def itemsOnPage: Int
   def codeTheme: Int

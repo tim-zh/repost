@@ -95,3 +95,7 @@ body {
 	height: 400px;
 	font-size: 80%;
 }
+
+.btn {
+    border-radius: 0
+}

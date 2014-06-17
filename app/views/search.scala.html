@@ -6,7 +6,7 @@
 	}
 	@if(!entries.isEmpty) {
 		<h3>Entries:</h3>
-		@if(user.isDefined && user.get.compactEntryList) {
+		@if(user.isDefined && user.get.entryListType == models.ListType.compactList) {
 			@compactEntryList(user, entries)
 		} else {
 			@entryList(user, entries)
