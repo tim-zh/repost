@@ -7,6 +7,7 @@
 		<meta name="description" content="">
 		<meta name="viewport" content="width=device-width, initial-scale=1">
 
+		<link rel="shortcut icon" type="image/png" href="@routes.Assets.at("images/favicon.png")">
 		<link rel="stylesheet" href="@routes.Assets.at("stylesheets/bootstrap.min.css")">
 		<link rel="stylesheet" href="@routes.Assets.at("stylesheets/bootstrap-theme.min.css")">
 		<link rel="stylesheet" href="@routes.Assets.at("stylesheets/perfect-scrollbar.css")">
@@ -58,7 +59,12 @@
 				<form method="post" action="/" class="navbar-form navbar-right">
 					<div class="input-group input-group-sm col-xs-12">
 						<input type="hidden" name="changeListType" value="true">
-						<button type="submit" class="btn btn-sm btn-default navbar-right">@user.get.entryListType.toString</button>
+						<button type="submit" class="btn btn-sm btn-default navbar-right">
+                            @user.get.entryListType.toString
+							<span style="@(if (user.get.entryListType.id == 0) "color:#35b0d5;")">&bull;</span>
+                            <span style="@(if (user.get.entryListType.id == 1) "color:#35b0d5;")">&bull;</span>
+                            <span style="@(if (user.get.entryListType.id == 2) "color:#35b0d5;")">&bull;</span>
+						</button>
 					</div>
 				</form>
 			} else {
