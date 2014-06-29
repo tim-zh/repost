@@ -41,24 +41,28 @@ package object controllers {
     var html: String = text
     val bbMap = new mutable.HashMap[String, String]
     bbMap.put("""(\r\n|\r|\n|\n\r)""", "<br/>")
-    bbMap.put("""\[b\]([\s\S]+?)\[/b\]""", "<strong>$1</strong>")
-    bbMap.put("""\[i\]([\s\S]+?)\[/i\]""", "<i>$1</i>")
-    bbMap.put("""\[u\]([\s\S]+?)\[/u\]""", "<u>$1</u>")
-    bbMap.put("""\[s\]([\s\S]+?)\[/s\]""", "<s>$1</s>")
-    bbMap.put("""\[size=(\d+?)\]([\s\S]+?)\[/size\]""", "<font size=$1>$2</font>")
+    bbMap.put("""(?s)\[b\](.+?)\[/b\]""", "<strong>$1</strong>")
+    bbMap.put("""(?s)\[i\](.+?)\[/i\]""", "<i>$1</i>")
+    bbMap.put("""(?s)\[u\](.+?)\[/u\]""", "<u>$1</u>")
+    bbMap.put("""(?s)\[s\](.+?)\[/s\]""", "<s>$1</s>")
+    bbMap.put("""(?s)\[size=(\d+?)\](.+?)\[/size\]""", "<font size=$1>$2</font>")
     bbMap.put("""\[url\]([\S&&[^']]+?)\[/url\]""", "<a href='$1'>$1</a>")
-    bbMap.put("""\[url=([\S&&[^']]+?)\]([\s\S]+?)\[/url\]""", "<a href='$1'>$2</a>")
+    bbMap.put("""(?s)\[url=([\S&&[^']]+?)\](.+?)\[/url\]""", "<a href='$1'>$2</a>")
     bbMap.put("""\[img\]([\S&&[^']]+?)\[/img\]""", "<img src='$1'/>")
     bbMap.put("""\[img=(\d*?),(\d*?)\]([\S&&[^']]+?)\[/img\]""", "<img width='$1' height='$2' src='$3'/>")
-    bbMap.put("""\[quote\]([\s\S]+?)\[/quote\]""", "<blockquote>$1</blockquote>")
-    bbMap.put("""\[ol\]([\s\S]+?)\[/ol\]""", "<ol>$1</ol>")
-    bbMap.put("""\[li\]([\s\S]+?)\[/li\]""", "<li>$1</li>")
-    bbMap.put("""\[center\]([\s\S]+?)\[/center\]""", "<div align='center'>$1</div>")
-    bbMap.put("""\[code=([\S&&[^']]*?)\]([\s\S]+?)\[/code\]""", "<pre><code class='$1'>$2</code></pre>")
-    bbMap.put("""\[p\]([\s\S]+?)\[/p\]""", "<p>$1</p>")
+    bbMap.put("""(?s)\[quote\](.+?)\[/quote\]""", "<blockquote>$1</blockquote>")
+    bbMap.put("""(?s)\[ol\](.+?)\[/ol\]""", "<ol>$1</ol>")
+    bbMap.put("""(?s)\[li\](.+?)\[/li\]""", "<li>$1</li>")
+    bbMap.put("""(?s)\[center\](.+?)\[/center\]""", "<div align='center'>$1</div>")
+    bbMap.put("""(?s)\[code=([\S&&[^']]*?)\](.+?)\[/code\]""", "<pre><code class='$1'>$2</code></pre>")
+    bbMap.put("""(?s)\[p\](.+?)\[/p\]""", "<p>$1</p>")
 
     html = escape(html)
-    bbMap.foreach(entry => html = html.replaceAll(entry._1, entry._2))
+    var temp = ""
+    while (temp != html) {
+      temp = html
+      bbMap.foreach(entry => html = html.replaceAll(entry._1, entry._2))
+    }
     html
   }
 

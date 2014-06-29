@@ -114,8 +114,12 @@ microEditor = function(element, buttonContainer, options) {
 		isPreview = !isPreview;
 		if (isPreview) {
 			var text = element.value;
-			defaultOptions.previewReplacements.split(',').filter(function(e) {return previewReplacements[e]}).
-				forEach(function(rule) {text = text.replace(previewReplacements[rule][0], previewReplacements[rule][1])});
+			var replacements = defaultOptions.previewReplacements.split(',').filter(function(e) {return previewReplacements[e]});
+			var temp = '';
+			while (temp != text) {
+				temp = text;
+				replacements.forEach(function(rule) {text = text.replace(previewReplacements[rule][0], previewReplacements[rule][1])});
+			}
 			if (options && options.customReplacements)
 				options.customReplacements.forEach(function(rule) {text = text.replace(rule[0], rule[1])});
 			previewContainer.innerHTML = text;

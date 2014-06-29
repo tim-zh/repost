@@ -9,6 +9,9 @@
 			}
 			(@comment.date.format(if (user.isDefined) user.get.dateFormat else controllers.defaultDateFormat))
 			<a href="/entry/@comment.entry.id?comment_id=@comment.id">#</a>
+			@if(user.isDefined) {
+				<button type="button" class="btn btn-default btn-xs pull-right" id="replyToComment@comment.id">reply</button>
+			}
 		</div>
 		<div class="panel-body">
 		@Html(comment.content)

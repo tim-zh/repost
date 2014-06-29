@@ -29,13 +29,13 @@
 } {
 	<script>
 		var isCommentFormExpanded = false;
+		var contentTextArea = $('#content');
 		$('#addComment').click(function() {
 			if (isCommentFormExpanded)
 				$('#commentForm').submit();
 			else {
 				isCommentFormExpanded = true;
 				$('#expanderContent').animate({height: 'toggle', opacity: 'toggle'});
-				var contentTextArea = $('#content');
 				contentTextArea.focus();
 				microEditor(contentTextArea[0], $('#buttonsContainer')[0], {
 					buttons: 'bold,italic,underline,strike,size|link,image|quote,list,hlCode|center,paragraph|preview',
@@ -59,11 +59,17 @@
 			}
 		});
 		@for(comment <- entry.comments) {
-			$('#deleteComment@comment.id').click(function(){
-				$.post('/comment/delete',{id: @comment.id},function(response) {
+			$('#deleteComment@comment.id').click(function() {
+				$.post('/comment/delete', {id: @comment.id}, function(response) {
 					if ('true' === response)
 						$('#comment@comment.id').remove();
 				});
+			});
+			$('#replyToComment@comment.id').click(function() {
+				if (!isCommentFormExpanded)
+					$('#addComment').click();
+				var text = html2bb("@Html(comment.content.replace("\"", "'"))");
+				contentTextArea.val(contentTextArea.val() + '[quote][b]@comment.author.name:[/b]\n' + text + '[/quote]');
 			});
 		}
 		var comment = $('#comment@commentId');
