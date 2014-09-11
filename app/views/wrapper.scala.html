@@ -154,7 +154,7 @@
 						chatSocket.send(JSON.stringify({tag: '@selectedTag.map(_.title).getOrElse("")', text: messageInput.val()}));
 						messageInput.val('');
 					};
-					$('#sendMessageButton').click(function() {sendMessage()});
+					$('#sendMessageButton').click(sendMessage);
 					messageInput.keypress(function(event) {
 						if (event.keyCode == 13 && messageInput.val()) {
 							event.preventDefault();
