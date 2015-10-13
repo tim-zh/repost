@@ -6,7 +6,6 @@ import play.api.data.Form
 import play.api.data.Forms._
 import play.api.mvc._
 import play.cache.Cache
-import scala.Some
 
 object AuthController extends Controller {
   def login() = Action { implicit req =>
@@ -26,18 +25,15 @@ object AuthController extends Controller {
     Redirect("/").withNewSession
   }
 
-  def updateSession(user: User)(implicit req: Request[_]) {
+  def updateSession(user: User)(implicit req: Request[_]) =
     Cache.set(req.session.get("user").getOrElse("-1"), user)
-  }
 
-  def authUser(user: Option[User])(implicit req: Request[_]): SimpleResult = {
-    user match {
-      case Some(x) =>
-        val key = UUID.randomUUID().toString
-        Cache.set(key, x)
-        Redirect("/").withSession(req.session +("user", key))
-      case None =>
-        Redirect("/")
-    }
+  def authUser(user: Option[User])(implicit req: Request[_]): SimpleResult = user match {
+    case Some(x) =>
+      val key = UUID.randomUUID().toString
+      Cache.set(key, x)
+      Redirect("/").withSession(req.session +("user", key))
+    case None =>
+      Redirect("/")
   }
 }

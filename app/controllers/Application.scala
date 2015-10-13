@@ -212,10 +212,8 @@ object Application extends Controller {
   //ajax call from user form
   def deleteUser() = Action { implicit req =>
     val user = getUserFromSession
-    if (dao.deleteUser(user))
-      Ok("true")
-    else
-      Ok("false")
+    val result = dao.deleteUser(user).toString
+    Ok(result)
   }
 
   def saveComment() = Action { implicit req =>
@@ -226,9 +224,9 @@ object Application extends Controller {
         saveCommentForm.bindFromRequest.fold(
           badForm => badForm.data.get("entryId") match {
             case Some(entryIdString) =>
-              try {
+              try
                 Redirect(routes.Application.entry(entryIdString.toLong))
-              } catch {
+              catch {
                 case t: NumberFormatException =>
                   Redirect("/")
               }
@@ -254,28 +252,22 @@ object Application extends Controller {
   def deleteComment() = Action { implicit req =>
     val user = getUserFromSession
     val id = Form(single("id", longNumber)).bindFromRequest().get
-    if (dao.deleteComment(user, id))
-      Ok("true")
-    else
-      Ok("false")
+    val result = dao.deleteComment(user, id).toString
+    Ok(result)
   }
 
   //ajax call from favorite tags panel in wrapper
   def addFavoriteTag(title: String) = Action { implicit req =>
     val user = getUserFromSession
-    if (dao.addFavoriteTag(user, title))
-      Ok("true")
-    else
-      Ok("false")
+    val result = dao.addFavoriteTag(user, title).toString
+    Ok(result)
   }
 
   //ajax call from favorite tags panel in wrapper
   def removeFavoriteTag(title: String) = Action { implicit req =>
     val user = getUserFromSession
-    if (dao.removeFavoriteTag(user, title))
-      Ok("true")
-    else
-      Ok("false")
+    val result = dao.removeFavoriteTag(user, title).toString
+    Ok(result)
   }
 
   //ajax call from saveEntry form
@@ -289,19 +281,18 @@ object Application extends Controller {
     val user = getUserFromSession
     var filename = ""
     Future {
-      if (user.isDefined) {
-        try {
-          req.body.file("quickImageFile").map { image =>
+      if (user.isDefined)
+        try
+          req.body.file("quickImageFile").foreach { image =>
             val file = createImageFile(image.filename)
             filename = file.getName
             image.ref.moveTo(file, replace = true)
           }
-        } catch {
+        catch {
           case e @ (_: IOException | _: SecurityException) =>
             e.printStackTrace()
             filename = ""
         }
-      }
       Ok(if (filename.isEmpty) "" else "/assets/images/uploaded/" + filename)
     }
   }

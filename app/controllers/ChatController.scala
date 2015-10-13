@@ -38,21 +38,21 @@ object ChatController extends Controller {
   //ajax call from chat init in wrapper
   def history(tagTitle: String) = Action.async { implicit req =>
     if (tagActors.contains(tagTitle))
-      tagActors(tagTitle) ? GetMessages() map {
+      tagActors(tagTitle) ? GetMessages map {
         case s: String => Ok(s)
       }
     else
       Future(Ok(""))
   }
 
-  case class GetMessages()
+  object GetMessages
   case class AddMessage(message: String)
 
   class TagActor extends Actor {
     val messages = new mutable.Queue[String]()
 
     def receive = {
-      case GetMessages() =>
+      case GetMessages =>
         val sb = new mutable.StringBuilder()
         messages.foreach(s => sb append s append "<br/>")
         sender ! sb.toString

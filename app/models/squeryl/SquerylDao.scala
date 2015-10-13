@@ -131,9 +131,9 @@ object SquerylDao extends Schema with Dao {
      var q = isEntryVisible(entry, user)
       if (!query.isEmpty)
         q = q and (entry.title like "%" + query + "%")
-      if (!users.isEmpty)
+      if (users.nonEmpty)
         q = q and (entry.authorId in users.map(_.id))
-      if (!tags.isEmpty)
+      if (tags.nonEmpty)
         q = q and (entry.id === et.entryId and (et.tagId in tags.map(_.id)))
       if (_from.isDefined && _to.isDefined)
         q = q and (entry.date between(new Timestamp(_from.get.getTime), new Timestamp(_to.get.getTime)))
@@ -233,7 +233,7 @@ object SquerylDao extends Schema with Dao {
   }
 
   def deleteUser(user: Option[models.User]): Boolean = inTransaction {
-    if (!user.isDefined)
+    if (user.isEmpty)
       return false
     users.deleteWhere(u => u.id === user.get.id) != 0
   }

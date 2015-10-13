@@ -11,14 +11,13 @@ import play.api.libs.ws.WS
 import play.api.mvc._
 import play.cache.Cache
 import scala.concurrent.ExecutionContext.Implicits.global
-import scala.collection.immutable.TreeMap
 import scala.collection.mutable
 import scala.concurrent.Future
 
 package object controllers {
   val dao = SquerylDao
-  val codeThemeMap = TreeMap(0 -> "dark", 1 -> "github", 2 -> "google code", 3 -> "idea", 4 -> "ir black",
-    5 -> "monokai", 6 -> "monokai sublime", 7 -> "obsidian", 8 -> "vs", 9 -> "xcode")
+  val codeThemes = Seq("dark", "darkula", "github", "github-gist", "google code", "idea", "ir black",
+    "monokai", "monokai sublime", "obsidian", "vs", "xcode")
   final val defaultDateFormat = "dd MMM yyyy HH:mm:ss"
   val maxMessageNumber = 50
 
@@ -124,7 +123,7 @@ package object controllers {
   case class LoginData(name: String, password: String)
   case class RegisterData(name: String, password: String, password2: String) {
     def this(badData: Map[String, String]) =
-      this(badData.get("name").getOrElse(""), badData.get("pass").getOrElse(""), badData.get("pass2").getOrElse(""))
+      this(badData.getOrElse("name", ""), badData.getOrElse("pass", ""), badData.getOrElse("pass2", ""))
 
     def validate: Seq[FormError] = {
       var errors = List[FormError]()
@@ -144,13 +143,13 @@ package object controllers {
   case class UserData(oldPass: String, newPass: String, newPass2: String, entryListType: Int,
                       dateFormat: String, itemsOnPage: Int, codeTheme: Int) {
     def this(badData: Map[String, String]) =
-      this(badData.get("oldPass").getOrElse(""),
-          badData.get("newPass").getOrElse(""),
-          badData.get("newPass2").getOrElse(""),
-          try { Integer.parseInt(badData.get("itemsOnPage").getOrElse(""))} catch { case _: NumberFormatException => -1},
-          badData.get("dateFormat").getOrElse(""),
-          try { Integer.parseInt(badData.get("itemsOnPage").getOrElse(""))} catch { case _: NumberFormatException => -1},
-          try { Integer.parseInt(badData.get("codeTheme").getOrElse(""))} catch { case _: NumberFormatException => -1})
+      this(badData.getOrElse("oldPass", ""),
+          badData.getOrElse("newPass", ""),
+          badData.getOrElse("newPass2", ""),
+          try { Integer.parseInt(badData.getOrElse("itemsOnPage", ""))} catch { case _: NumberFormatException => -1},
+          badData.getOrElse("dateFormat", ""),
+          try { Integer.parseInt(badData.getOrElse("itemsOnPage", ""))} catch { case _: NumberFormatException => -1},
+          try { Integer.parseInt(badData.getOrElse("codeTheme", ""))} catch { case _: NumberFormatException => -1})
 
     def validate(userPass: String): Seq[FormError] = {
       var errors = List[FormError]()
@@ -166,7 +165,7 @@ package object controllers {
       }
       if (itemsOnPage < 1 || itemsOnPage > 50)
         errors = FormError("itemsOnPage", "should be >0 and <=50") :: errors
-      if (codeTheme < 0 || codeTheme > codeThemeMap.size - 1)
+      if (codeTheme < 0 || codeTheme > codeThemes.size - 1)
         errors = FormError("codeTheme", "incorrect code block theme") :: errors
       errors
     }

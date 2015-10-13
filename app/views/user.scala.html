@@ -20,7 +20,7 @@
 				<label class="col-xs-2 control-label" for="codeTheme">code highlight theme</label>
 				<div class="col-xs-3">
 					<select name="codeTheme" id="codeTheme" class="form-control">
-					@for((i, text) <- controllers.codeThemeMap) {
+					@for((text, i) <- controllers.codeThemes.zipWithIndex) {
 						<option@(if(entryData.contains("codeTheme") && entryData("codeTheme") == i.toString) " selected") value="@i">
 							@text
 						</option>
